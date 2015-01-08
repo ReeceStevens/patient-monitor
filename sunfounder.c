@@ -11,6 +11,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+// Useful debug macros
+#include "dbg.h"
+
 // Port Definitions from BCM2835 ARM Peripherals
 // Datasheet
 #define CS      (*((volatile int32_t *) 0x7E204000))
@@ -112,3 +115,19 @@ error:
     return -1;
 }
 
+static void spi_setup(void){
+    int rc = setupio();
+    if (rc) {
+        goto error;
+    }
+
+    uint8_t i;
+    // set gpio pins 7-11 to alt to use SPI interface
+    for (i = 7; i <= 11; i++){
+        INP_GPIO(i);
+        SET_GPIO_ALT(i, 0);
+    }
+
+error:
+    printf("spi setup failed.");
+}
