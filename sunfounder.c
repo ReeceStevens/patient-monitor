@@ -123,11 +123,16 @@ static void spi_setup(void){
 
     uint8_t i;
     // set gpio pins 7-11 to alt to use SPI interface
+    // Note: these are pins 7-11 according to BCM numbering.
+    // This isn't the actual order they appear on the board.
     for (i = 7; i <= 11; i++){
         INP_GPIO(i);
         SET_GPIO_ALT(i, 0);
     }
+    return;
 
 error:
     printf("spi setup failed.");
 }
+
+
