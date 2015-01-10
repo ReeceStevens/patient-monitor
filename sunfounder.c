@@ -23,10 +23,10 @@
 #define LTOH    (*((volatile int32_t *) 0x7E204010))
 #define DC      (*((volatile int32_t *) 0x7E204014))
 
-// Define configuration for clock and other 
-// SPI control settings
-// Source: spi-bcm2708.c driver
+#define PAGE_SIZE (4*1024)
+#define BLOCK_SIZE (4*1024)
 
+/* Bitfields in CS */
 #define SPI_CS_LEN_LONG		0x02000000
 #define SPI_CS_DMA_LEN		0x01000000
 #define SPI_CS_CSPOL2		0x00800000
@@ -52,11 +52,6 @@
 #define SPI_CS_CS_10		0x00000002
 #define SPI_CS_CS_01		0x00000001
 
-#define SPI_TIMEOUT_MS	150
-
-#define PAGE_SIZE (4*1024)
-#define BLOCK_SIZE (4*1024)
-
 // Pointer for I/O access
 volatile unsigned *gpio;
 
@@ -65,6 +60,7 @@ volatile unsigned *gpio;
 // Note: always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x, y)
 #define BCM2708_PERI_BASE   0x20000000
 #define GPIO_BASE   (BCM2708_PERI_BASE + 0x200000) // address of GPIO controller
+
 #define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
 #define OUT_GPIO(g) *(gpio+((g)/10)) |= (1<<(((g)%10)*3))
 #define SET_GPIO_ALT(g, a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
@@ -129,10 +125,51 @@ static void spi_setup(void){
         INP_GPIO(i);
         SET_GPIO_ALT(i, 0);
     }
+
+    // Initialize SPI for usage
+    uint32_t cs = 0;
+    // CS register setup: Chip 0, CPHA 1, CPOL 1, CSPOL 1
+    cs =  SPI_CS_CPHA | SPI_CS_CPOL | SPI_CS_CPOL | SPI_CS_CSPOL; 
+    // Write to the register
+    CS = cs;
+    
+    // Clock divider; 0 -> clock speed of 65536
+    uint32_t cdiv = 0;
+    CLK = cdiv; 
+
     return;
 
 error:
     printf("spi setup failed.");
 }
 
+/*
+ * write_data(data) - Write a uint32_t number to the transmit
+ * FIFO of the SPI interface.
+ *
+ * Parameters - data (uint32_t)
+ *
+ */
+uint8_t write_data(uint32_t data){
+    // Check to ensure TA is set and spi_setup() has been run
+    if (!(CS & 0x080)){
+        fprintf(stderr, "SPI has not been initialized");
+        goto error;
+    } 
+
+    // If TXD = 0, transfer fifo is full
+    if (!(CS & 0x40000)){
+       fprintf(stderr, "fifo full");
+       goto error; 
+    }
+    // Write data to the SPI_FIFO register
+    FIFO = data; 
+
+    // Wait for tranfer to finish (DONE = 1)
+    while (!(CS & 0x10000)){}
+    return 0;
+    
+error:
+    return 1;
+}
 
