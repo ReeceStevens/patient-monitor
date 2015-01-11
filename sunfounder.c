@@ -73,6 +73,11 @@ volatile unsigned *gpio;
 #define GPIO_PULL *(gpio+37) // Pullup/pulldown
 #define GPIO_PULLCLK0 *(gpio+38) // Pull up or pull down clock
 
+#define MOSI 10
+#define MISO 9
+#define CE 8
+#define SCLK 11
+
 int mem_fd;
 void *gpio_map;
 /*
@@ -128,8 +133,8 @@ static void spi_setup(void){
 
     // Initialize SPI for usage
     uint32_t cs = 0;
-    // CS register setup: Chip 0, CPHA 1, CPOL 1, CSPOL 1
-    cs =  SPI_CS_CPHA | SPI_CS_CPOL | SPI_CS_CPOL | SPI_CS_CSPOL; 
+    // CS register setup: Chip 0, CPHA 1, CPOL 1, CSPOL 0, LoSSI mode.
+    cs =  SPI_CS_CPHA | SPI_CS_CPOL | SPI_CS_CPOL | SPI_CS_LEN ; 
     // Write to the register
     CS = cs;
     
@@ -144,18 +149,17 @@ error:
 }
 
 /*
- * write_data(data) - Write a uint32_t number to the transmit
+ * write_data(data) - Write a uint16_t number to the transmit
  * FIFO of the SPI interface.
- *
- * Parameters - data (uint32_t)
+ * Parameters - data (uint16_t)
  *
  */
-uint8_t write_data(uint32_t data){
-    // Check to ensure TA is set and spi_setup() has been run
-    if (!(CS & 0x080)){
-        fprintf(stderr, "SPI has not been initialized");
-        goto error;
-    } 
+uint8_t write_data(uint16_t data){
+    // Set TA
+    CS |= 0x080;
+  
+    // Make first bit high to indicate data 
+    data = data + 0x100;
 
     // If TXD = 0, transfer fifo is full
     if (!(CS & 0x40000)){
@@ -167,9 +171,45 @@ uint8_t write_data(uint32_t data){
 
     // Wait for tranfer to finish (DONE = 1)
     while (!(CS & 0x10000)){}
+    // Clear TA
+    CS &= ~0x080;
+
     return 0;
     
 error:
     return 1;
 }
+
+/*
+ * write_command(command) - Write a uint16_t number to the transmit
+ * FIFO of the SPI interface.
+ * Parameters - command (uint16_t)
+ *
+ */
+uint8_t write_command(uint16_t command){
+    // Set TA
+    CS |= 0x080;
+
+    // MSB must stay a 0 to register as a command
+
+    // If TXD = 0, transfer fifo is full
+    if (!(CS & 0x40000)){
+       fprintf(stderr, "fifo full");
+       goto error; 
+    }
+    // Write data to the SPI_FIFO register
+    FIFO = command; 
+
+    // Wait for tranfer to finish (DONE = 1)
+    while (!(CS & 0x10000)){}
+    // Clear TA
+    CS &= ~0x080;
+
+    return 0;
+    
+error:
+    return 1;
+}
+
+
 
