@@ -16,12 +16,12 @@
 
 // Port Definitions from BCM2835 ARM Peripherals
 // Datasheet
-#define CS      (*((volatile int32_t *) 0x7E204000))
-#define FIFO    (*((volatile int32_t *) 0x7E204004))
-#define CLK     (*((volatile int32_t *) 0x7E204008))
-#define DLEN    (*((volatile int32_t *) 0x7E20400C))
-#define LTOH    (*((volatile int32_t *) 0x7E204010))
-#define DC      (*((volatile int32_t *) 0x7E204014))
+#define CS      (*((volatile int32_t *) 0x20204000))
+#define FIFO    (*((volatile int32_t *) 0x20204004))
+#define CLK     (*((volatile int32_t *) 0x20204008))
+#define DLEN    (*((volatile int32_t *) 0x2020400C))
+#define LTOH    (*((volatile int32_t *) 0x20204010))
+#define DC      (*((volatile int32_t *) 0x20204014))
 
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
@@ -86,12 +86,13 @@ void *gpio_map;
  *
  * */
 int setupio(){
+    fprintf(stdout, "hello");
     // open /dev/mem
     if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Can't open /dev/mem\n");
         goto error;
     }
-
+    printf("before mmap");
     // mmap GPIO
     gpio_map = mmap(
         NULL,
@@ -102,6 +103,7 @@ int setupio(){
         GPIO_BASE
     );
 
+    printf("after mmap");
     close(mem_fd); // close after mmap is complete
     
     if (gpio_map == MAP_FAILED) {
@@ -110,13 +112,14 @@ int setupio(){
     }
 
     gpio = (volatile unsigned *)gpio_map;
+    printf("gpio pins set up");
     return 0;
 
 error:
     return -1;
 }
 
-static void spi_setup(void){
+uint8_t spi_setup(void){
     int rc = setupio();
     if (rc) {
         goto error;
@@ -141,11 +144,12 @@ static void spi_setup(void){
     // Clock divider; 0 -> clock speed of 65536
     uint32_t cdiv = 0;
     CLK = cdiv; 
-
-    return;
+    printf("setup didn't fail");
+    return 0;
 
 error:
     printf("spi setup failed.");
+    return 1;
 }
 
 /*
@@ -163,7 +167,7 @@ uint8_t write_data(uint16_t data){
 
     // If TXD = 0, transfer fifo is full
     if (!(CS & 0x40000)){
-       fprintf(stderr, "fifo full");
+       printf("fifo full");
        goto error; 
     }
     // Write data to the SPI_FIFO register
@@ -194,7 +198,7 @@ uint8_t write_command(uint16_t command){
 
     // If TXD = 0, transfer fifo is full
     if (!(CS & 0x40000)){
-       fprintf(stderr, "fifo full");
+       printf("fifo full");
        goto error; 
     }
     // Write data to the SPI_FIFO register
@@ -212,19 +216,25 @@ error:
 }
 
 int main(){
-    spi_setup();
-    uint32_t i = 100000;
+    printf("hello there main");
+    //setupio();
+    uint8_t rc = spi_setup();
+    if (rc) {
+        return 1;
+    }
+    uint32_t i = 10;
+    printf("setup is complete");
     while(1){
-        write_command(0x20);
+        //write_command(0x20);
         while (i) {
             i--;
         }
-        i = 100000;
-        write_command(0x21);
+        i = 10000;
+        //write_command(0x21);
         while (i) {
             i--;
         }
-        i = 100000;
+        i = 10000;
     }
     return 0;
 
