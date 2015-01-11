@@ -211,5 +211,22 @@ error:
     return 1;
 }
 
+int main(){
+    spi_setup();
+    uint32_t i = 100000;
+    while(1){
+        write_command(0x20);
+        while (i) {
+            i--;
+        }
+        i = 100000;
+        write_command(0x21);
+        while (i) {
+            i--;
+        }
+        i = 100000;
+    }
+    return 0;
 
+}
 
