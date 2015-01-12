@@ -52,6 +52,68 @@
 #define SPI_CS_CS_10		0x00000002
 #define SPI_CS_CS_01		0x00000001
 
+// Software commands for display
+#define CMD_RST 0x01
+#define CMD_DISP_ID 0x04
+#define CMD_DISP_STATUS 0x09
+#define CMD_DISP_PWR_MODE 0x0A
+#define CMD_DISP_MADCTL 0x0B
+#define CMD_DISP_PIXEL_FORM 0x0C
+#define CMD_DISP_IMG_FORM 0x0D
+#define CMD_DISP_SIGNAL_MODE 0x0E
+#define CMD_DISP_SELF_DIAG 0x0F
+#define CMD_SLEEP_MODE_ON 0x10
+#define CMD_SLEEP_MODE_OFF 0x11
+#define CMD_PARTIAL_MODE_ON 0x12
+#define CMD_NORM_DISP_MODE_ON 0x13
+#define CMD_DISP_INVRT_OFF 0x20
+#define CMD_DISP_INVRT_ON 0x21
+#define CMD_GAMMA_SET 0x26
+#define CMD_DISP_OFF 0x28
+#define CMD_DISP_ON 0x29
+#define CMD_COLUMN_ADDR_SET 0x2A
+#define CMD_PAGE_ADDR_SET 0x2B
+#define CMD_MEM_WRITE 0x2C
+#define CMD_COLOR_SET 0x2D
+#define CMD_MEM_READ 0x2E
+#define CMD_PARTIAL_AREA 0x30
+#define CMD_VERT_SCROLL_DEF 0x33
+#define CMD_TEARING_EFFECT_LINE_OFF 0x34
+#define CMD_TEARING_EFFECT_LINE_ON 0x35
+#define CMD_MEM_ACCESS_CTL 0x36
+#define CMD_VERT_SCROLL_START_ADDR 0x37
+#define CMD_IDLE_MODE_OFF 0x38
+#define CMD_IDLE_MODE_ON 0x39
+#define CMD_PIXEL_FORMAT_SET 0x3A
+#define CMD_WRITE_MEM_CONTINUE 0x3C
+#define CMD_READ_MEM_CONTINUE 0x3E
+#define CMD_SET_TEAR_SCANLINE 0x44
+#define CMD_GET_SCANLINE 0x45
+#define CMD_WRITE_DISP_BRIGHTNESS 0x51
+#define CMD_READ_DISP_BRIGHTNESS 0x52
+#define CMD_WRITE_CTRL_DISP 0x53
+#define CMD_READ_CTRL_DISP 0x54
+#define CMD_WRITE_CONTENT_ADAPTIVE_BRIGHT_CTRL 0x55
+#define CMD_READ_CONTENT_ADAPTIVE_BRIGHT_CTRL 0x56
+#define CMD_WRITE_CABC_MIN_BRIGHTNESS 0x5E
+#define CMD_READ_CABC_MIN_BRIGHTNESS 0x5F
+#define CMD_READ_ID1 0xDA
+#define CMD_READ_ID2 0xDB
+#define CMD_READ_ID3 0xDC
+#define CMD_BACKLIGHT_CTRL_1 0xB8
+#define CMD_BACKLIGHT_CTRL_2 0xB8
+#define CMD_BACKLIGHT_CTRL_3 0xB8
+#define CMD_BACKLIGHT_CTRL_4 0xB8
+#define CMD_BACKLIGHT_CTRL_5 0xB8
+#define CMD_BACKLIGHT_CTRL_6 0xB8
+#define CMD_BACKLIGHT_CTRL_7 0xB8
+#define CMD_BACKLIGHT_CTRL_8 0xB8
+#define CMD_POWER_CTRL_1 0xC0
+#define CMD_POWER_CTRL_2 0xC1
+#define CMD_INTERFACE_CTRL 0xF6
+
+
+
 // Pointer for I/O access
 volatile unsigned *gpio;
 
@@ -80,19 +142,23 @@ volatile unsigned *gpio;
 
 int mem_fd;
 void *gpio_map;
+
 /*
  * setupio() - This function initializes a memory region to access GPIO
  * Parameters - none
  *
  * */
 int setupio(){
-    fprintf(stdout, "hello");
     // open /dev/mem
+    
+    // NOTE: Some Linux kernels (namely, default Arch Linux) don't allow
+    // any direct access to /dev/mem. This causes an immediate segfault, 
+    // even as root. 
     if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Can't open /dev/mem\n");
         goto error;
     }
-    printf("before mmap");
+
     // mmap GPIO
     gpio_map = mmap(
         NULL,
@@ -103,11 +169,10 @@ int setupio(){
         GPIO_BASE
     );
 
-    printf("after mmap");
     close(mem_fd); // close after mmap is complete
     
     if (gpio_map == MAP_FAILED) {
-        printf("mmap error %d\n", (int)gpio_map);
+        printf("mmap error\n");
         goto error;
     }
 
