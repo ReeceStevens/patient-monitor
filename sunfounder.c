@@ -13,7 +13,6 @@
 
 // Useful debug macros
 #include "dbg.h"
-
 // Port Definitions from BCM2835 ARM Peripherals
 // Datasheet
 #define CS      (*((volatile int32_t *) 0x20204000))
@@ -279,6 +278,76 @@ uint8_t write_command(uint16_t command){
 error:
     return 1;
 }
+
+uint8_t screen_init(void){
+	spi_setup();
+	write_command(CMD_DISP_ON);
+	write_command(CMD_SLEEP_MODE_OFF);
+	return 0;
+}
+
+
+// Modified from Adafruit_ILI9341.cpp
+//
+uint8_t setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
+	write_command(CMD_COLUMN_ADDR_SET);
+	// Write X Start
+	write_data(x0 >> 8);
+	write_data(x0 & 0xFF);
+	// Write X End
+	write_data(x1 >> 8);
+	write_data(x1 & 0xFF);
+
+	write_command(CMD_PAGE_ADDR_SET);
+	// Write Y Start
+	write_data(y0 >> 8);
+	write_data(y0 & 0xFF);
+	// Write Y End
+	write_data(y1 >> 8);
+	write_data(y1 & 0xFF);
+
+	write_command(CMD_MEM_WRITE);
+
+	return 0;
+}
+
+uint8_t setColor(uint16_t color){
+	write_data(color >> 8);
+	write_data(color);
+	return 0;
+}
+
+uint8_t drawPixel(uint16_t x, uint16_t y, uint16_t color){
+	if ((x >= 320) | (y >= 240)) {goto error;}
+	setAddressWindow(x, y, x+1, y+1);
+	setColor(color);
+	
+	return 0;
+error:
+	return 1;
+}
+
+uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color){
+	// Check to ensure we don't go out of bounds
+	if ((x >= 320) || (y >= 240)) {goto error;}
+	if ((x + w - 1) >= 320) { w = 320 - x;}
+	if ((y + h - 1) >= 240) { h = 240 - y;}
+
+	setAddressWindow(x, y, x+w-1, y+h-1);
+	setColor(color);
+	return 0;
+
+error: 
+	return 1;
+}
+
+uint8_t fillScreen(uint16_t color){
+	fillRectangle(0, 0, 320, 240, color);
+	return 0;
+}
+
+
+
 
 int main(){
     printf("hello there main");
