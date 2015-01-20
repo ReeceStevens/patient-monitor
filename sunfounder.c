@@ -15,12 +15,12 @@
 #include "dbg.h"
 // Port Definitions from BCM2835 ARM Peripherals
 // Datasheet
-#define CS      (*((volatile int32_t *) 0x20204000))
-#define FIFO    (*((volatile int32_t *) 0x20204004))
-#define CLK     (*((volatile int32_t *) 0x20204008))
-#define DLEN    (*((volatile int32_t *) 0x2020400C))
-#define LTOH    (*((volatile int32_t *) 0x20204010))
-#define DC      (*((volatile int32_t *) 0x20204014))
+#define CS      spi
+#define FIFO    (spi + 0x4) 
+#define CLK     (spi + 0x8)
+#define DLEN    (spi + 0xC)
+#define LTOH    (spi + 0x10)
+#define DC      (spi + 0x14)
 
 #define PAGE_SIZE (4*1024)
 #define BLOCK_SIZE (4*1024)
@@ -115,6 +115,7 @@
 
 // Pointer for I/O access
 volatile unsigned *gpio;
+volatile unsigned *spi;
 
 // GPIO setup macros
 // Source: Linux Foundation
@@ -141,6 +142,7 @@ volatile unsigned *gpio;
 
 int mem_fd;
 void *gpio_map;
+void *spi_map;
 
 /*
  * setupio() - This function initializes a memory region to access GPIO
@@ -153,7 +155,7 @@ int setupio(){
     // NOTE: Some Linux kernels (namely, default Arch Linux) don't allow
     // any direct access to /dev/mem. This causes an immediate segfault, 
     // even as root. 
-    if ((mem_fd = open("/dev/spidev0.0", O_RDWR|O_SYNC) ) < 0) {
+    if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Can't open /dev/mem\n");
         goto error;
     }
@@ -168,15 +170,32 @@ int setupio(){
         GPIO_BASE
     );
 
+    spi_map = mmap(
+        NULL,
+        0x20, 
+        PROT_READ|PROT_WRITE,
+        MAP_SHARED,
+        mem_fd,
+        (GPIO_BASE+0x4000)
+    );
+
     close(mem_fd); // close after mmap is complete
     
     if (gpio_map == MAP_FAILED) {
-        printf("mmap error\n");
+        printf("gpio mmap error\n");
+        goto error;
+    }
+
+    if (spi_map == MAP_FAILED) {
+        printf("spi mmap error\n");
         goto error;
     }
 
     gpio = (volatile unsigned *)gpio_map;
-    printf("gpio pins set up");
+    printf("gpio pins set up\n");
+    spi = (volatile unsigned *)spi_map;
+    printf("spi registers set up\n");
+    
     return 0;
 
 error:
@@ -203,11 +222,11 @@ uint8_t spi_setup(void){
     // CS register setup: Chip 0, CPHA 1, CPOL 1, CSPOL 0, LoSSI mode.
     cs =  SPI_CS_CPHA | SPI_CS_CPOL | SPI_CS_CPOL | SPI_CS_LEN ; 
     // Write to the register
-    CS = cs;
+    *(CS) = cs;
     
     // Clock divider; 0 -> clock speed of 65536
     uint32_t cdiv = 0;
-    CLK = cdiv; 
+    *(CLK) = cdiv; 
     printf("setup didn't fail");
     return 0;
 
@@ -224,23 +243,23 @@ error:
  */
 uint8_t write_data(uint16_t data){
     // Set TA
-    CS |= 0x080;
+    *(CS) |= 0x080;
   
     // Make first bit high to indicate data 
     data = data + 0x100;
 
     // If TXD = 0, transfer fifo is full
-    if (!(CS & 0x40000)){
+    if (!(*(CS) & 0x40000)){
        printf("fifo full");
        goto error; 
     }
     // Write data to the SPI_FIFO register
-    FIFO = data; 
+    *(FIFO) = data; 
 
     // Wait for tranfer to finish (DONE = 1)
-    while (!(CS & 0x10000)){}
+    while (!(*(CS) & 0x10000)){}
     // Clear TA
-    CS &= ~0x080;
+    *(CS) &= ~0x080;
 
     return 0;
     
@@ -256,22 +275,22 @@ error:
  */
 uint8_t write_command(uint16_t command){
     // Set TA
-    CS |= 0x080;
+    *(CS) |= 0x080;
 
     // MSB must stay a 0 to register as a command
 
     // If TXD = 0, transfer fifo is full
-    if (!(CS & 0x40000)){
+    if (!(*(CS) & 0x40000)){
        printf("fifo full");
        goto error; 
     }
     // Write data to the SPI_FIFO register
-    FIFO = command; 
+    *(FIFO) = command; 
 
     // Wait for tranfer to finish (DONE = 1)
-    while (!(CS & 0x10000)){}
+    while (!(*(CS) & 0x10000)){}
     // Clear TA
-    CS &= ~0x080;
+    *(CS) &= ~0x080;
 
     return 0;
     
