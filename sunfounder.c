@@ -202,6 +202,13 @@ error:
     return -1;
 }
 
+uint8_t led_heartbeat_setup(void){
+    INP_GPIO(21);
+    OUT_GPIO(21);
+    GPIO_SET = 1<<21;
+    return 0;
+}
+
 uint8_t spi_setup(void){
     int rc = setupio();
     if (rc) {
@@ -372,6 +379,7 @@ int main(){
     printf("hello there main");
     //setupio();
     uint8_t rc = screen_init();
+    led_heartbeat_setup();
     if (rc) {
         return 1;
     }
@@ -379,17 +387,22 @@ int main(){
     printf("setup is complete");
     while(1){
         fillScreen(0x0000);
+	write_command(CMD_MEM_WRITE);
+        GPIO_CLR = 1<<21;
         //write_command(0x20);
+	printf("passing loop\n");
         while (i) {
             i--;
         }
-        i = 10000;
+        i = 100000000;
         fillScreen(0xFFFF);
+	write_command(CMD_MEM_WRITE);
+	GPIO_SET = 1<<21;
         //write_command(0x21);
         while (i) {
             i--;
         }
-        i = 10000;
+        i = 100000000;
     }
     return 0;
 
