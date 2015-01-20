@@ -352,18 +352,20 @@ uint8_t fillScreen(uint16_t color){
 int main(){
     printf("hello there main");
     //setupio();
-    uint8_t rc = spi_setup();
+    uint8_t rc = screen_init();
     if (rc) {
         return 1;
     }
-    uint32_t i = 10;
+    uint32_t i = 100;
     printf("setup is complete");
     while(1){
+        fillScreen(0x0000);
         //write_command(0x20);
         while (i) {
             i--;
         }
         i = 10000;
+        fillScreen(0xFFFF);
         //write_command(0x21);
         while (i) {
             i--;
