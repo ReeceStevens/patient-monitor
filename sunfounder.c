@@ -153,7 +153,7 @@ int setupio(){
     // NOTE: Some Linux kernels (namely, default Arch Linux) don't allow
     // any direct access to /dev/mem. This causes an immediate segfault, 
     // even as root. 
-    if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
+    if ((mem_fd = open("/dev/spidev0.0", O_RDWR|O_SYNC) ) < 0) {
         printf("Can't open /dev/mem\n");
         goto error;
     }
