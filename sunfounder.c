@@ -262,7 +262,19 @@ uint8_t spi_setup_test(void){
         goto error;
     }
 
-    int ret = ioctl(fd, SPI_IOC_WR_MODE32, &mode);
+    int ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
+    if (ret == -1) {
+        printf("Unable to write bits per word\n");
+        goto error;
+    }
+    bits = 1;
+    ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
+    if (ret == -1) {
+        printf("Unable to read bits per word\n");
+        goto error;
+    }
+    
+    ret = ioctl(fd, SPI_IOC_WR_MODE32, &mode);
     if (ret == -1) {
         printf("Unable to write mode\n");
         goto error;
@@ -274,18 +286,6 @@ uint8_t spi_setup_test(void){
         goto error;
     }
 
-    ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
-    if (ret == -1) {
-        printf("Unable to write bits per word\n");
-        goto error;
-    }
-    bits = 1;
-    ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
-    if (ret == -1) {
-        printf("Unable to read bits per word\n");
-        goto error;
-    }
-    printf("Bits per word: %d\n", bits);
 	ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
     if (ret == -1) {
         printf("Unable to write max speed\n");
