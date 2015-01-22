@@ -306,6 +306,7 @@ uint8_t spi_setup_test(void){
 
     return 0;
 error:
+    close(fd);
     return 1;
 }
 
