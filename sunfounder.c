@@ -275,15 +275,15 @@ uint8_t spi_setup_test(void){
     }
      
     printf("bits per word: %d\n", bits);
-    ret = ioctl(fd, SPI_IOC_WR_MODE32, &mode);
-    if (ret == -1) {
-        printf("Unable to write mode\n");
-        goto error;
-    }
 
     ret = ioctl(fd, SPI_IOC_RD_MODE32, &mode);
     if (ret == -1) {
         printf("Unable to read mode\n");
+        goto error;
+    }
+    ret = ioctl(fd, SPI_IOC_WR_MODE32, &mode);
+    if (ret == -1) {
+        printf("Unable to write mode\n");
         goto error;
     }
 
@@ -441,11 +441,10 @@ uint8_t fillScreen(uint16_t color){
 
 
 int main(){
-    printf("hello there main");
-    //setupio();
+    setupio();
     uint8_t rc = spi_setup_test();
     //uint8_t rc = screen_init();
-    //led_heartbeat_setup();
+    led_heartbeat_setup();
     if (rc) {
         return 1;
     }
@@ -453,17 +452,17 @@ int main(){
     printf("setup is complete");
     while(1){
         fillScreen(0x0000);
-	write_command(CMD_MEM_WRITE);
-     //   GPIO_CLR = 1<<21;
+	    write_command(CMD_MEM_WRITE);
+        GPIO_CLR = 1<<21;
         //write_command(0x20);
-	printf("passing loop\n");
+    	printf("passing loop\n");
         while (i) {
             i--;
         }
         i = 100000000;
         fillScreen(0xFFFF);
-	write_command(CMD_MEM_WRITE);
-	//GPIO_SET = 1<<21;
+    	write_command(CMD_MEM_WRITE);
+    	GPIO_SET = 1<<21;
         //write_command(0x21);
         while (i) {
             i--;
