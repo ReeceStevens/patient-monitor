@@ -289,12 +289,12 @@ uint8_t spi_setup_test(void){
 
 	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
 
-    ret = ioctl(fd, SPI_IOC_RD_MODE32, &mode);
+    ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
     if (ret == -1) {
         printf("Unable to read mode\n");
         goto error;
     }
-    ret = ioctl(fd, SPI_IOC_WR_MODE32, &mode);
+    ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
     if (ret == -1) {
         printf("Unable to write mode\n");
         goto error;
