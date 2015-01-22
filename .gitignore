@@ -1,4 +1,5 @@
 .ycm*
 *.o
 *.swp
+*.dSYM
 spidev_test.c
