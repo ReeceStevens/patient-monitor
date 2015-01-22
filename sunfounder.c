@@ -4,12 +4,18 @@
 // Date: 1.7.15
 // Author: Reece Stevens
 
-#include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+#include <sys/mman.h>
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 // Useful debug macros
 #include "dbg.h"
@@ -144,6 +150,12 @@ int mem_fd;
 void *gpio_map;
 void *spi_map;
 
+static const char *device = "/dev/spidev0.0";
+static uint32_t mode;
+static uint8_t bits = 9;
+static uint32_t speed = 500000;
+static uint16_t delay;
+
 /*
  * setupio() - This function initializes a memory region to access GPIO
  * Parameters - none
@@ -152,9 +164,8 @@ void *spi_map;
 int setupio(){
     // open /dev/mem
     
-    // NOTE: Some Linux kernels (namely, default Arch Linux) don't allow
-    // any direct access to /dev/mem. This causes an immediate segfault, 
-    // even as root. 
+    // NOTE: If you're getting a segfault, don't forget to chmod +rw /dev/mem
+    // so that you can access the gpio and spi registers
     if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Can't open /dev/mem\n");
         goto error;
@@ -169,7 +180,7 @@ int setupio(){
         mem_fd,
         GPIO_BASE
     );
-
+    // mmap SPI
     spi_map = mmap(
         NULL,
         0x20, 
@@ -239,6 +250,59 @@ uint8_t spi_setup(void){
 
 error:
     printf("spi setup failed.");
+    return 1;
+}
+
+uint8_t spi_setup_test(void){
+    mode = SPI_TX_DUAL | SPI_RX_DUAL;
+    int fd;
+    fd = open("/dev/spidev0.0", O_RDWR);
+    if (fd < 0) {
+        printf("Unable to open spidev0.0\n");
+        goto error;
+    }
+
+    int ret = ioctl(fd, SPI_IOC_WR_MODE32, &mode);
+    if (ret == -1) {
+        printf("Unable to write mode\n");
+        goto error;
+    }
+
+    ret = ioctl(fd, SPI_IOC_RD_MODE32, &mode);
+    if (ret == -1) {
+        printf("Unable to read mode\n");
+        goto error;
+    }
+
+    ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
+    if (ret == -1) {
+        printf("Unable to write bits per word\n");
+        goto error;
+    }
+    bits = 1;
+    ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
+    if (ret == -1) {
+        printf("Unable to read bits per word\n");
+        goto error;
+    }
+    printf("Bits per word: %d\n", bits);
+	ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+    if (ret == -1) {
+        printf("Unable to write max speed\n");
+        goto error;
+    }
+	ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
+    if (ret == -1) {
+        printf("Unable to read max speed\n");
+        goto error;
+    }
+
+	printf("spi mode: 0x%x\n", mode);
+	printf("bits per word: %d\n", bits);
+	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
+
+    return 0;
+error:
     return 1;
 }
 
