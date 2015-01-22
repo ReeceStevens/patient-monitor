@@ -253,9 +253,8 @@ error:
     return 1;
 }
 
-uint8_t spi_setup_test(void){
+uint8_t spi_setup_test(int fd){
     mode = SPI_TX_DUAL | SPI_RX_DUAL;
-    int fd;
     fd = open("/dev/spidev0.0", O_RDWR);
     if (fd < 0) {
         printf("Unable to open spidev0.0\n");
@@ -273,8 +272,6 @@ uint8_t spi_setup_test(void){
         printf("Unable to read bits per word\n");
         goto error;
     }
-     
-    printf("bits per word: %d\n", bits);
 
 	ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
     if (ret == -1) {
@@ -286,8 +283,6 @@ uint8_t spi_setup_test(void){
         printf("Unable to read max speed\n");
         goto error;
     }
-
-	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
 
     ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
     if (ret == -1) {
@@ -303,10 +298,9 @@ uint8_t spi_setup_test(void){
 	printf("spi mode: 0x%x\n", mode);
 	printf("bits per word: %d\n", bits);
 	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
-
+    
     return 0;
 error:
-    close(fd);
     return 1;
 }
 
@@ -441,15 +435,68 @@ uint8_t fillScreen(uint16_t color){
 }
 
 
+void transfer(int fd)
+{
+	int ret;
+	uint8_t tx[] = {
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0x40, 0x00, 0x00, 0x00, 0x00, 0x95,
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		0xDE, 0xAD, 0xBE, 0xEF, 0xBA, 0xAD,
+		0xF0, 0x0D,
+	};
+	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx,
+		.rx_buf = (unsigned long)rx,
+		.len = ARRAY_SIZE(tx),
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
+
+	if (mode & SPI_TX_QUAD)
+		tr.tx_nbits = 4;
+	else if (mode & SPI_TX_DUAL)
+		tr.tx_nbits = 2;
+	if (mode & SPI_RX_QUAD)
+		tr.rx_nbits = 4;
+	else if (mode & SPI_RX_DUAL)
+		tr.rx_nbits = 2;
+	if (!(mode & SPI_LOOP)) {
+		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+			tr.rx_buf = 0;
+		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+			tr.tx_buf = 0;
+	}
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		printf("can't send spi message\n");
+
+	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.2X ", rx[ret]);
+	}
+	puts("");
+}
 
 
 int main(){
     setupio();
-    uint8_t rc = spi_setup_test();
+    int fd = open("/dev/spidev0.0", O_RDWR);
+    if (fd < 0) {
+        printf("Unable to open spidev0.0\n");
+        goto error;
+    }
+    uint8_t rc = spi_setup_test(fd);
     //uint8_t rc = screen_init();
     led_heartbeat_setup();
     if (rc) {
-        return 1;
+        goto error;
     }
     uint32_t i = 100;
     printf("setup is complete");
@@ -472,7 +519,10 @@ int main(){
         }
         i = 100000000;
     }
+    close(fd);
     return 0;
-
+error:
+    close(fd);
+    return 1;
 }
 
