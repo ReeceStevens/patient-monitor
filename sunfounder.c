@@ -273,7 +273,8 @@ uint8_t spi_setup_test(void){
         printf("Unable to read bits per word\n");
         goto error;
     }
-    
+     
+    printf("bits per word: %d\n", bits);
     ret = ioctl(fd, SPI_IOC_WR_MODE32, &mode);
     if (ret == -1) {
         printf("Unable to write mode\n");
