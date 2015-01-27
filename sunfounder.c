@@ -493,6 +493,84 @@ uint8_t screen_shutdown(int fd){
 	return 0;
 }
 
+void screenInitAdafruit(int fd){
+    writeCommand(0xEF, fd);
+    writeData(0x03, fd);
+    writeData(0x80, fd);
+    writeData(0x02, fd);
+
+    writeCommand(0xCF, fd);
+    writeData(0x00, fd);
+    writeData(0xC1, fd);
+    writeData(0x30, fd);
+
+    writeCommand(0xED, fd);
+    writeData(0x64, fd);
+    writeData(0x03, fd);
+    writeData(0x12, fd);
+    writeData(0x81, fd);
+
+    writeCommand(0xE8, fd);
+    writeData(0x85, fd);
+    writeData(0x00, fd);
+    writeData(0x78, fd);
+
+    writeCommand(0xCB, fd);
+    writeData(0x39, fd);
+    writeData(0x2C, fd);
+    writeData(0x00, fd);
+    writeData(0x34, fd);
+    writeData(0x02, fd);
+
+    writeCommand(0xF7, fd);
+    writeData(0x20, fd);
+
+    writeCommand(0xEA, fd);
+    writeData(0x00, fd);
+    writeData(0x00, fd);
+
+    writeCommand(0xC0, fd); // Power control
+    writeData(0x23, fd);
+
+    writeCommand(0xC1, fd);
+    writeData(0x10, fd);
+
+    writeCommand(0xC5, fd); // VCM Control
+    writeData(0x3E, fd);
+    writeData(0x28, fd);
+
+    writeCommand(0xC7, fd);
+    writeData(0x86, fd);
+
+    writeCommand(0x36, fd); // Memory Access Control
+    writeData(0x48, fd);
+
+    writeCommand(0x3A, fd);
+    writeData(0x55, fd);
+
+    writeCommand(0xB1, fd);
+    writeData(0x00, fd);
+    writeData(0x18, fd);
+
+    writeCommand(0xB6, fd); // Display function control
+    writeData(0x08, fd);
+    writeData(0x82, fd);
+    writeData(0x27, fd);
+
+    writeCommand(0xF2, fd); // Disable 3Gamma Function
+    writeData(0x00, fd);
+
+    writeCommand(CMD_SLEEP_MODE_OFF, fd);
+    // Delay and give the screen time
+    uint32_t delay = 100000;
+    while (delay){
+        delay --;
+    }
+    writeCommand(CMD_DISP_ON, fd);
+    return;
+    
+}
+
 int main(){
     setupio();
     int fd = open("/dev/spidev0.0", O_RDWR);
@@ -501,14 +579,16 @@ int main(){
         goto error;
     }
     uint8_t rc = spi_setup_test(fd);
-    rc = screen_init(fd);
+    screenInitAdafruit(fd);
+    printf("Adafruit version of setup is complete\n");
+    //rc = screen_init(fd);
     //rc = screen_shutdown(fd);
     led_heartbeat_setup();
     if (rc) {
         goto error;
     }
     uint32_t i = 100;
-    printf("setup is complete");
+    printf("setup is complete\n");
     while(1){
         fillScreen(0x0000, fd);
 	writeCommand(CMD_MEM_WRITE, fd);
