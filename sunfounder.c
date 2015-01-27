@@ -304,10 +304,11 @@ error:
     return 1;
 }
 
-void transfer(int fd, uint8_t msg_length, uint16_t tx[])
+void transfer(int fd, uint8_t msg_length, uint16_t tx_init)
 {
 	int ret;
-	uint8_t rx[] = {0, 0};
+    uint16_t tx[] = {tx_init};
+	uint16_t rx[] = {0};
 	struct spi_ioc_transfer tr = { .tx_buf = (unsigned long)tx, .rx_buf = (unsigned long)rx,
 		.len = 1,
 		.delay_usecs = delay,
@@ -340,10 +341,10 @@ void transfer(int fd, uint8_t msg_length, uint16_t tx[])
 	for (ret = 0; ret < 1 ; ret++) {
 		if (!(ret % 6))
 			puts("");
-		printf("%.2X ", rx[0]);
+		printf("%.3X ", rx[0]);
 	}
 
-	printf("%.2X ", rx[0]);
+	printf("%.3X ", rx[0]);
     fflush(stdout);
 	puts("");
 }
