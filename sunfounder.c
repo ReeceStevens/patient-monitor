@@ -512,6 +512,10 @@ uint8_t fillScreen(uint16_t color, int fd){
 
 uint8_t screen_init(int fd){
 	//spi_setup();
+    uint32_t delayer = 100000;
+    while (delayer){
+        delayer --;
+    }
 	writeCommand(CMD_DISP_ON, fd);
 	writeCommand(CMD_SLEEP_MODE_OFF, fd);
     writeCommand(CMD_DISP_ID, fd);
@@ -593,10 +597,6 @@ void screenInitAdafruit(int fd){
 
     writeCommand(CMD_SLEEP_MODE_OFF, fd);
     // Delay and give the screen time
-    uint32_t delay = 100000;
-    while (delay){
-        delay --;
-    }
     writeCommand(CMD_DISP_ON, fd);
     return;
     
