@@ -304,6 +304,49 @@ error:
     return 1;
 }
 
+void writeCommand(int fd, uint8_t command)
+{
+	int ret;
+	uint16_t tx[] = {
+		0x00, command
+	};
+	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx,
+		.rx_buf = (unsigned long)rx,
+		.len = ARRAY_SIZE(tx),
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
+
+	if (mode & SPI_TX_QUAD)
+		tr.tx_nbits = 4;
+	else if (mode & SPI_TX_DUAL)
+		tr.tx_nbits = 2;
+	if (mode & SPI_RX_QUAD)
+		tr.rx_nbits = 4;
+	else if (mode & SPI_RX_DUAL)
+		tr.rx_nbits = 2;
+	if (!(mode & SPI_LOOP)) {
+		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+			tr.rx_buf = 0;
+		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+			tr.tx_buf = 0;
+	}
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		printf("can't send spi message\n");
+
+	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.2X ", rx[ret]);
+	}
+	puts("");
+}
+/*
 void writeCommand(int fd, uint8_t tx_init)
 {
     int ret;
@@ -348,8 +391,51 @@ void writeCommand(int fd, uint8_t tx_init)
 		printf("%.2X ", rx[ret]);
 	}
 	puts("");
-}
+} */
+ 
+void writeData(int fd, uint8_t data)
+{
+	int ret;
+	uint16_t tx[] = {
+		0x01, data
+	};
+	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx,
+		.rx_buf = (unsigned long)rx,
+		.len = ARRAY_SIZE(tx),
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
 
+	if (mode & SPI_TX_QUAD)
+		tr.tx_nbits = 4;
+	else if (mode & SPI_TX_DUAL)
+		tr.tx_nbits = 2;
+	if (mode & SPI_RX_QUAD)
+		tr.rx_nbits = 4;
+	else if (mode & SPI_RX_DUAL)
+		tr.rx_nbits = 2;
+	if (!(mode & SPI_LOOP)) {
+		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+			tr.rx_buf = 0;
+		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+			tr.tx_buf = 0;
+	}
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		printf("can't send spi message\n");
+
+	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.2X ", rx[ret]);
+	}
+	puts("");
+}
+/*
 void writeData(int fd, uint8_t tx_init)
 {
 	int ret;
@@ -394,7 +480,7 @@ void writeData(int fd, uint8_t tx_init)
 		printf("%.2X ", rx[ret]);
 	}
 	puts("");
-}
+} */
 
 /*
  * write_data(data) - Write a uint16_t number to the transmit
@@ -616,9 +702,9 @@ int main(){
         goto error;
     }
     uint8_t rc = spi_setup_test(fd);
-    screenInitAdafruit(fd);
-    printf("Adafruit version of setup is complete\n");
-    //rc = screen_init(fd);
+    //screenInitAdafruit(fd);
+    //printf("Adafruit version of setup is complete\n");
+    rc = screen_init(fd);
     //rc = screen_shutdown(fd);
     led_heartbeat_setup();
     if (rc) {
