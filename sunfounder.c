@@ -308,9 +308,9 @@ void transfer(int fd, uint8_t msg_length, uint16_t tx_init)
 {
 	int ret;
     uint16_t tx[] = {tx_init};
-	uint16_t rx[] = {0};
+	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
 	struct spi_ioc_transfer tr = { .tx_buf = (unsigned long)tx, .rx_buf = (unsigned long)rx,
-		.len = 1,
+		.len = ARRAY_SIZE(tx),
 		.delay_usecs = delay,
 		.speed_hz = speed,
 		.bits_per_word = bits,
@@ -338,13 +338,11 @@ void transfer(int fd, uint8_t msg_length, uint16_t tx_init)
 
     // This for loop is nonsensical, but I'm keeping it
     // for testing purposes
-	for (ret = 0; ret < 1 ; ret++) {
+	for (ret = 0; ret < ARRAY_SIZE(tx) ; ret++) {
 		if (!(ret % 6))
 			puts("");
-		printf("%.3X ", rx[0]);
+		printf("%.3X ", rx[ret]);
 	}
-
-	printf("%.3X ", rx[0]);
     fflush(stdout);
 	puts("");
 }
