@@ -255,7 +255,7 @@ error:
 
 uint8_t spi_setup_test(int fd){
     mode = 0x0;
-    fd = open("/dev/spidev0.0", O_RDWR);
+    fd = open(device, O_RDWR);
     if (fd < 0) {
         printf("Unable to open spidev0.0\n");
         goto error;
@@ -307,7 +307,7 @@ error:
 void transfer(int fd, uint8_t msg_length, uint16_t tx[])
 {
 	int ret;
-	uint8_t rx[] = {0};
+	uint8_t rx[] = {0, 0};
 	struct spi_ioc_transfer tr = { .tx_buf = (unsigned long)tx, .rx_buf = (unsigned long)rx,
 		.len = 1,
 		.delay_usecs = delay,
