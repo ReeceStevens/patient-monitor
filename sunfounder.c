@@ -342,7 +342,7 @@ void writeCommand(int fd, uint16_t command)
 	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
 		if (!(ret % 6))
 			puts("");
-		printf("%.2X ", rx[ret]);
+		printf("%.3X ", rx[ret]);
 	}
 	puts("");
 }
