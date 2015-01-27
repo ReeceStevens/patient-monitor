@@ -306,6 +306,7 @@ error:
 
 void writeCommand(int fd, uint8_t tx_init)
 {
+    while (!(*(CS) & 0x10000)){}
 	int ret;
     uint8_t tx[] = {0x00, tx_init};
 	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
@@ -334,15 +335,17 @@ void writeCommand(int fd, uint8_t tx_init)
 	}
 
 	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1)
+	if (ret < 1){
 		printf("can't send spi message\n");
         return;
+    }
 
     // This for loop is nonsensical, but I'm keeping it
     // for testing purposes
 	for (ret = 0; ret < ARRAY_SIZE(tx) ; ret++) {
-		if (!(ret % 6))
+		if (!(ret % 6)){
 			puts("");
+        }
 		printf("%.2X ", rx[ret]);
 	}
 	puts("");
@@ -350,6 +353,7 @@ void writeCommand(int fd, uint8_t tx_init)
 
 void writeData(int fd, uint8_t tx_init)
 {
+    while (!(*(CS) & 0x10000)){}
 	int ret;
     uint8_t tx[] = {0x01, tx_init};
 	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
@@ -378,15 +382,17 @@ void writeData(int fd, uint8_t tx_init)
 	}
 
 	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1)
+	if (ret < 1){
 		printf("can't send spi message\n");
         return;
+    }
 
     // This for loop is nonsensical, but I'm keeping it
     // for testing purposes
 	for (ret = 0; ret < ARRAY_SIZE(tx) ; ret++) {
-		if (!(ret % 6))
+		if (!(ret % 6)){
 			puts("");
+        }
 		printf("%.2X ", rx[ret]);
 	}
 	puts("");
