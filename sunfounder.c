@@ -478,8 +478,13 @@ uint8_t screen_init(int fd){
 	spi_setup();
 	writeCommand(CMD_DISP_ON, fd);
 	writeCommand(CMD_SLEEP_MODE_OFF, fd);
-    writeCommand(CMD_DISP_ID, fd);
-    printf("Commands written to screen\n");
+    	writeCommand(CMD_DISP_ID, fd);
+    	printf("Commands written to screen\n");
+	return 0;
+}
+
+uint8_t screen_shutdown(int fd){
+	writeCommand(CMD_DISP_OFF, fd);
 	return 0;
 }
 
@@ -492,6 +497,7 @@ int main(){
     }
     uint8_t rc = spi_setup_test(fd);
     rc = screen_init(fd);
+    rc = screen_shutdown(fd);
     led_heartbeat_setup();
     if (rc) {
         goto error;
