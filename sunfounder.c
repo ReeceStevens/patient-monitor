@@ -306,8 +306,7 @@ error:
 
 void writeCommand(int fd, uint8_t tx_init)
 {
-    while (!(*(CS) & 0x10000)){}
-	int ret;
+    int ret;
     uint8_t tx[] = {0x00, tx_init};
 	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
 	struct spi_ioc_transfer tr = { 
@@ -353,9 +352,8 @@ void writeCommand(int fd, uint8_t tx_init)
 
 void writeData(int fd, uint8_t tx_init)
 {
-    while (!(*(CS) & 0x10000)){}
 	int ret;
-    uint8_t tx[] = {0x01, tx_init};
+    	uint8_t tx[] = {0x01, tx_init};
 	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
 	struct spi_ioc_transfer tr = { 
         .tx_buf = (unsigned long)tx, 

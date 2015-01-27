@@ -38,10 +38,10 @@ static uint16_t delay;
 static void transfer(int fd)
 {
 	int ret;
-	uint8_t tx[] = {
-		0xFF, 0xFF, 0xFF
+	uint16_t tx[] = {
+		0x1FF
 	};
-	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
+	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)tx,
 		.rx_buf = (unsigned long)rx,
@@ -73,7 +73,7 @@ static void transfer(int fd)
 	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
 		if (!(ret % 6))
 			puts("");
-		printf("%.2X ", rx[ret]);
+		printf("%.3X ", rx[ret]);
 	}
 	puts("");
 }
