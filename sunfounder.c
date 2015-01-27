@@ -478,6 +478,7 @@ uint8_t screen_init(int fd){
 	spi_setup();
 	writeCommand(CMD_DISP_ON, fd);
 	writeCommand(CMD_SLEEP_MODE_OFF, fd);
+    writeCommand(CMD_DISP_ID, fd);
     printf("Commands written to screen\n");
 	return 0;
 }
