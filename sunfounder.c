@@ -304,11 +304,11 @@ error:
     return 1;
 }
 
-void writeCommand(int fd, uint8_t command)
+void writeCommand(int fd, uint16_t command)
 {
 	int ret;
 	uint16_t tx[] = {
-		0x00, command
+		command
 	};
 	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
 	struct spi_ioc_transfer tr = {
@@ -393,11 +393,11 @@ void writeCommand(int fd, uint8_t tx_init)
 	puts("");
 } */
  
-void writeData(int fd, uint8_t data)
+void writeData(int fd, uint16_t data)
 {
 	int ret;
 	uint16_t tx[] = {
-		0x01, data
+		data + 0x0100
 	};
 	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
 	struct spi_ioc_transfer tr = {
