@@ -342,6 +342,9 @@ void transfer(int fd, uint8_t msg_length, uint16_t tx[])
 			puts("");
 		printf("%.2X ", rx[0]);
 	}
+
+	printf("%.2X ", rx[0]);
+    fflush(stdout);
 	puts("");
 }
 
