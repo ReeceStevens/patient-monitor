@@ -3,8 +3,6 @@
 //
 // Date: 1.7.15
 // Author: Reece Stevens
-//
-// Note: this is me showing how to commit a file yay
 
 #include <stdint.h>
 #include <unistd.h>
@@ -369,13 +367,6 @@ error:
     return 1;
 }
 
-uint8_t screen_init(void){
-	spi_setup();
-	write_command(CMD_DISP_ON);
-	write_command(CMD_SLEEP_MODE_OFF);
-	return 0;
-}
-
 
 // Modified from Adafruit_ILI9341.cpp
 //
@@ -437,23 +428,14 @@ uint8_t fillScreen(uint16_t color){
 }
 
 
-void transfer(int fd)
+void transfer(int fd, uint8_t msg_length, uint16_t tx[])
 {
 	int ret;
-	uint8_t tx[] = {
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0x40, 0x00, 0x00, 0x00, 0x00, 0x95,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-		0xDE, 0xAD, 0xBE, 0xEF, 0xBA, 0xAD,
-		0xF0, 0x0D,
-	};
-	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
+	uint8_t rx[3] = {0, };
 	struct spi_ioc_transfer tr = {
 		.tx_buf = (unsigned long)tx,
 		.rx_buf = (unsigned long)rx,
-		.len = ARRAY_SIZE(tx),
+		.len = 3,
 		.delay_usecs = delay,
 		.speed_hz = speed,
 		.bits_per_word = bits,
@@ -478,7 +460,7 @@ void transfer(int fd)
 	if (ret < 1)
 		printf("can't send spi message\n");
 
-	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
+	for (ret = 0; ret < 3; ret++) {
 		if (!(ret % 6))
 			puts("");
 		printf("%.2X ", rx[ret]);
@@ -486,6 +468,19 @@ void transfer(int fd)
 	puts("");
 }
 
+void writeCommand(uint16_t command, int fd){
+    uint16_t tx[] = {command, 0x00, 0x00};
+    transfer(fd, 3, tx);
+
+}
+
+uint8_t screen_init(int fd){
+	spi_setup();
+	writeCommand(CMD_DISP_ON, fd);
+	writeCommand(CMD_SLEEP_MODE_OFF, fd);
+    printf("Commands written to screen\n");
+	return 0;
+}
 
 int main(){
     setupio();
@@ -495,7 +490,7 @@ int main(){
         goto error;
     }
     uint8_t rc = spi_setup_test(fd);
-    //uint8_t rc = screen_init();
+    rc = screen_init(fd);
     led_heartbeat_setup();
     if (rc) {
         goto error;
@@ -503,8 +498,8 @@ int main(){
     uint32_t i = 100;
     printf("setup is complete");
     while(1){
-        fillScreen(0x0000);
-	    write_command(CMD_MEM_WRITE);
+        //fillScreen(0x0000);
+	    //write_command(CMD_MEM_WRITE);
         GPIO_CLR = 1<<21;
         //write_command(0x20);
     	printf("passing loop\n");
@@ -512,8 +507,8 @@ int main(){
             i--;
         }
         i = 100000000;
-        fillScreen(0xFFFF);
-    	write_command(CMD_MEM_WRITE);
+        //fillScreen(0xFFFF);
+    	//write_command(CMD_MEM_WRITE);
     	GPIO_SET = 1<<21;
         //write_command(0x21);
         while (i) {
