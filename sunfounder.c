@@ -350,13 +350,13 @@ void transfer(int fd, uint8_t msg_length, uint16_t tx_init)
 }
 
 void writeCommand(uint16_t command, int fd){
-    uint16_t tx[] = {command};
+    uint16_t tx = command;
     transfer(fd, 1, tx);
 
 }
 
 void writeData(uint16_t data, int fd){
-    uint16_t tx[] = {data + 0x100};
+    uint16_t tx = data + 0x100;
     transfer(fd, 1, tx);
 }
 
