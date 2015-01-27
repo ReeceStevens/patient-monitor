@@ -304,12 +304,14 @@ error:
     return 1;
 }
 
-void transfer(int fd, uint8_t msg_length, uint16_t tx_init)
+void writeCommand(int fd, uint8_t tx_init)
 {
 	int ret;
-    uint16_t tx[] = {tx_init};
-	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
-	struct spi_ioc_transfer tr = { .tx_buf = (unsigned long)tx, .rx_buf = (unsigned long)rx,
+    uint8_t tx[] = {0x00, tx_init};
+	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
+	struct spi_ioc_transfer tr = { 
+        .tx_buf = (unsigned long)tx, 
+        .rx_buf = (unsigned long)rx,
 		.len = ARRAY_SIZE(tx),
 		.delay_usecs = delay,
 		.speed_hz = speed,
@@ -341,21 +343,53 @@ void transfer(int fd, uint8_t msg_length, uint16_t tx_init)
 	for (ret = 0; ret < ARRAY_SIZE(tx) ; ret++) {
 		if (!(ret % 6))
 			puts("");
-		printf("%.3X ", rx[ret]);
+		printf("%.2X ", rx[ret]);
 	}
-    fflush(stdout);
 	puts("");
 }
 
-void writeCommand(uint16_t command, int fd){
-    uint16_t tx = command;
-    transfer(fd, 1, tx);
+void writeData(int fd, uint8_t tx_init)
+{
+	int ret;
+    uint8_t tx[] = {0x01, tx_init};
+	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
+	struct spi_ioc_transfer tr = { 
+        .tx_buf = (unsigned long)tx, 
+        .rx_buf = (unsigned long)rx,
+		.len = ARRAY_SIZE(tx),
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
 
-}
+	if (mode & SPI_TX_QUAD)
+		tr.tx_nbits = 4;
+	else if (mode & SPI_TX_DUAL)
+		tr.tx_nbits = 2;
+	if (mode & SPI_RX_QUAD)
+		tr.rx_nbits = 4;
+	else if (mode & SPI_RX_DUAL)
+		tr.rx_nbits = 2;
+	if (!(mode & SPI_LOOP)) {
+		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+			tr.rx_buf = 0;
+		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+			tr.tx_buf = 0;
+	}
 
-void writeData(uint16_t data, int fd){
-    uint16_t tx = data + 0x100;
-    transfer(fd, 1, tx);
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		printf("can't send spi message\n");
+        return;
+
+    // This for loop is nonsensical, but I'm keeping it
+    // for testing purposes
+	for (ret = 0; ret < ARRAY_SIZE(tx) ; ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.2X ", rx[ret]);
+	}
+	puts("");
 }
 
 /*
@@ -384,10 +418,7 @@ uint8_t write_data(uint16_t data){
     // Clear TA
     *(CS) &= ~0x080;
 
-    return 0;
-    
-error:
-    return 1;
+    return 0; error: return 1;
 }
 
 /*
