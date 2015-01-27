@@ -254,7 +254,7 @@ error:
 }
 
 uint8_t spi_setup_test(int fd){
-    mode = SPI_TX_DUAL | SPI_RX_DUAL;
+    mode = 0x0;
     fd = open("/dev/spidev0.0", O_RDWR);
     if (fd < 0) {
         printf("Unable to open spidev0.0\n");
