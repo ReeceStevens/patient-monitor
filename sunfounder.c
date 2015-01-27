@@ -304,10 +304,10 @@ error:
     return 1;
 }
 
-void transfer(int fd, uint8_t msg_length, uint16_t tx)
+void transfer(int fd, uint8_t msg_length, uint16_t tx[])
 {
 	int ret;
-	uint8_t rx = 0;
+	uint8_t rx[] = {0};
 	struct spi_ioc_transfer tr = { .tx_buf = (unsigned long)tx, .rx_buf = (unsigned long)rx,
 		.len = 1,
 		.delay_usecs = delay,
@@ -333,25 +333,26 @@ void transfer(int fd, uint8_t msg_length, uint16_t tx)
 	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
 	if (ret < 1)
 		printf("can't send spi message\n");
+        return;
 
     // This for loop is nonsensical, but I'm keeping it
     // for testing purposes
 	for (ret = 0; ret < 1 ; ret++) {
 		if (!(ret % 6))
 			puts("");
-		printf("%.2X ", rx);
+		printf("%.2X ", rx[0]);
 	}
 	puts("");
 }
 
 void writeCommand(uint16_t command, int fd){
-    uint16_t tx = command;
+    uint16_t tx[] = {command};
     transfer(fd, 1, tx);
 
 }
 
 void writeData(uint16_t data, int fd){
-    uint16_t tx = data + 0x100;
+    uint16_t tx[] = {data + 0x100};
     transfer(fd, 1, tx);
 }
 
