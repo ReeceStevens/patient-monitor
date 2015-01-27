@@ -304,6 +304,57 @@ error:
     return 1;
 }
 
+void transfer(int fd, uint8_t msg_length, uint16_t tx)
+{
+	int ret;
+	uint8_t rx = 0;
+	struct spi_ioc_transfer tr = { .tx_buf = (unsigned long)tx, .rx_buf = (unsigned long)rx,
+		.len = 1,
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
+
+	if (mode & SPI_TX_QUAD)
+		tr.tx_nbits = 4;
+	else if (mode & SPI_TX_DUAL)
+		tr.tx_nbits = 2;
+	if (mode & SPI_RX_QUAD)
+		tr.rx_nbits = 4;
+	else if (mode & SPI_RX_DUAL)
+		tr.rx_nbits = 2;
+	if (!(mode & SPI_LOOP)) {
+		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+			tr.rx_buf = 0;
+		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+			tr.tx_buf = 0;
+	}
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		printf("can't send spi message\n");
+
+    // This for loop is nonsensical, but I'm keeping it
+    // for testing purposes
+	for (ret = 0; ret < 1 ; ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.2X ", rx);
+	}
+	puts("");
+}
+
+void writeCommand(uint16_t command, int fd){
+    uint16_t tx = command;
+    transfer(fd, 1, tx);
+
+}
+
+void writeData(uint16_t data, int fd){
+    uint16_t tx = data + 0x100;
+    transfer(fd, 1, tx);
+}
+
 /*
  * write_data(data) - Write a uint16_t number to the transmit
  * FIFO of the SPI interface.
@@ -370,116 +421,69 @@ error:
 
 // Modified from Adafruit_ILI9341.cpp
 //
-uint8_t setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
-	write_command(CMD_COLUMN_ADDR_SET);
+uint8_t setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, int fd){
+	writeCommand(CMD_COLUMN_ADDR_SET,fd);
 	// Write X Start
-	write_data(x0 >> 8);
-	write_data(x0 & 0xFF);
+	writeData(x0 >> 8, fd);
+	writeData(x0 & 0xFF, fd);
 	// Write X End
-	write_data(x1 >> 8);
-	write_data(x1 & 0xFF);
+	writeData(x1 >> 8, fd);
+	writeData(x1 & 0xFF, fd);
 
-	write_command(CMD_PAGE_ADDR_SET);
+	writeCommand(CMD_PAGE_ADDR_SET, fd);
 	// Write Y Start
-	write_data(y0 >> 8);
-	write_data(y0 & 0xFF);
+	writeData(y0 >> 8, fd);
+	writeData(y0 & 0xFF, fd);
 	// Write Y End
-	write_data(y1 >> 8);
-	write_data(y1 & 0xFF);
+	writeData(y1 >> 8, fd);
+	writeData(y1 & 0xFF, fd);
 
-	write_command(CMD_MEM_WRITE);
+	writeCommand(CMD_MEM_WRITE, fd);
 
 	return 0;
 }
 
-uint8_t setColor(uint16_t color){
-	write_data(color >> 8);
-	write_data(color);
+uint8_t setColor(uint16_t color, int fd){
+	writeData(color >> 8, fd);
+	writeData(color, fd);
 	return 0;
 }
 
-uint8_t drawPixel(uint16_t x, uint16_t y, uint16_t color){
+uint8_t drawPixel(uint16_t x, uint16_t y, uint16_t color, int fd){
 	if ((x >= 320) | (y >= 240)) {goto error;}
-	setAddressWindow(x, y, x+1, y+1);
-	setColor(color);
+	setAddressWindow(x, y, x+1, y+1, fd);
+	setColor(color, fd);
 	
 	return 0;
 error:
 	return 1;
 }
 
-uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color){
+uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int fd){
 	// Check to ensure we don't go out of bounds
 	if ((x >= 320) || (y >= 240)) {goto error;}
 	if ((x + w - 1) >= 320) { w = 320 - x;}
 	if ((y + h - 1) >= 240) { h = 240 - y;}
 
-	setAddressWindow(x, y, x+w-1, y+h-1);
-	setColor(color);
+	setAddressWindow(x, y, x+w-1, y+h-1, fd);
+	setColor(color, fd);
 	return 0;
 
 error: 
 	return 1;
 }
 
-uint8_t fillScreen(uint16_t color){
-	fillRectangle(0, 0, 320, 240, color);
+uint8_t fillScreen(uint16_t color, int fd){
+	fillRectangle(0, 0, 320, 240, color, fd);
 	return 0;
-}
-
-
-void transfer(int fd, uint8_t msg_length, uint16_t tx[])
-{
-	int ret;
-	uint8_t rx[3] = {0, };
-	struct spi_ioc_transfer tr = {
-		.tx_buf = (unsigned long)tx,
-		.rx_buf = (unsigned long)rx,
-		.len = 3,
-		.delay_usecs = delay,
-		.speed_hz = speed,
-		.bits_per_word = bits,
-	};
-
-	if (mode & SPI_TX_QUAD)
-		tr.tx_nbits = 4;
-	else if (mode & SPI_TX_DUAL)
-		tr.tx_nbits = 2;
-	if (mode & SPI_RX_QUAD)
-		tr.rx_nbits = 4;
-	else if (mode & SPI_RX_DUAL)
-		tr.rx_nbits = 2;
-	if (!(mode & SPI_LOOP)) {
-		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
-			tr.rx_buf = 0;
-		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
-			tr.tx_buf = 0;
-	}
-
-	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1)
-		printf("can't send spi message\n");
-
-	for (ret = 0; ret < 3; ret++) {
-		if (!(ret % 6))
-			puts("");
-		printf("%.2X ", rx[ret]);
-	}
-	puts("");
-}
-
-void writeCommand(uint16_t command, int fd){
-    uint16_t tx[] = {command, 0x00, 0x00};
-    transfer(fd, 3, tx);
-
 }
 
 uint8_t screen_init(int fd){
 	spi_setup();
 	writeCommand(CMD_DISP_ON, fd);
 	writeCommand(CMD_SLEEP_MODE_OFF, fd);
-    	writeCommand(CMD_DISP_ID, fd);
-    	printf("Commands written to screen\n");
+    writeCommand(CMD_DISP_ID, fd);
+    printf("Commands written to screen\n");
 	return 0;
 }
 
