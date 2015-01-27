@@ -346,52 +346,6 @@ void writeCommand(int fd, uint16_t command)
 	}
 	puts("");
 }
-/*
-void writeCommand(int fd, uint8_t tx_init)
-{
-    int ret;
-    uint8_t tx[] = {0x00, tx_init};
-	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
-	struct spi_ioc_transfer tr = { 
-        .tx_buf = (unsigned long)tx, 
-        .rx_buf = (unsigned long)rx,
-		.len = ARRAY_SIZE(tx),
-		.delay_usecs = delay,
-		.speed_hz = speed,
-		.bits_per_word = bits,
-	};
-
-	if (mode & SPI_TX_QUAD)
-		tr.tx_nbits = 4;
-	else if (mode & SPI_TX_DUAL)
-		tr.tx_nbits = 2;
-	if (mode & SPI_RX_QUAD)
-		tr.rx_nbits = 4;
-	else if (mode & SPI_RX_DUAL)
-		tr.rx_nbits = 2;
-	if (!(mode & SPI_LOOP)) {
-		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
-			tr.rx_buf = 0;
-		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
-			tr.tx_buf = 0;
-	}
-
-	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1){
-		printf("can't send spi message\n");
-        return;
-    }
-
-    // This for loop is nonsensical, but I'm keeping it
-    // for testing purposes
-	for (ret = 0; ret < ARRAY_SIZE(tx) ; ret++) {
-		if (!(ret % 6)){
-			puts("");
-        }
-		printf("%.2X ", rx[ret]);
-	}
-	puts("");
-} */
  
 void writeData(int fd, uint16_t data)
 {
@@ -435,52 +389,6 @@ void writeData(int fd, uint16_t data)
 	}
 	puts("");
 }
-/*
-void writeData(int fd, uint8_t tx_init)
-{
-	int ret;
-    	uint8_t tx[] = {0x01, tx_init};
-	uint8_t rx[ARRAY_SIZE(tx)] = {0, };
-	struct spi_ioc_transfer tr = { 
-        .tx_buf = (unsigned long)tx, 
-        .rx_buf = (unsigned long)rx,
-		.len = ARRAY_SIZE(tx),
-		.delay_usecs = delay,
-		.speed_hz = speed,
-		.bits_per_word = bits,
-	};
-
-	if (mode & SPI_TX_QUAD)
-		tr.tx_nbits = 4;
-	else if (mode & SPI_TX_DUAL)
-		tr.tx_nbits = 2;
-	if (mode & SPI_RX_QUAD)
-		tr.rx_nbits = 4;
-	else if (mode & SPI_RX_DUAL)
-		tr.rx_nbits = 2;
-	if (!(mode & SPI_LOOP)) {
-		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
-			tr.rx_buf = 0;
-		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
-			tr.tx_buf = 0;
-	}
-
-	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1){
-		printf("can't send spi message\n");
-        return;
-    }
-
-    // This for loop is nonsensical, but I'm keeping it
-    // for testing purposes
-	for (ret = 0; ret < ARRAY_SIZE(tx) ; ret++) {
-		if (!(ret % 6)){
-			puts("");
-        }
-		printf("%.2X ", rx[ret]);
-	}
-	puts("");
-} */
 
 /*
  * write_data(data) - Write a uint16_t number to the transmit
@@ -603,7 +511,7 @@ uint8_t fillScreen(uint16_t color, int fd){
 }
 
 uint8_t screen_init(int fd){
-	spi_setup();
+	//spi_setup();
 	writeCommand(CMD_DISP_ON, fd);
 	writeCommand(CMD_SLEEP_MODE_OFF, fd);
     writeCommand(CMD_DISP_ID, fd);
@@ -714,7 +622,7 @@ int main(){
     printf("setup is complete\n");
     while(1){
         fillScreen(0x0000, fd);
-	writeCommand(CMD_MEM_WRITE, fd);
+	    writeCommand(CMD_MEM_WRITE, fd);
         GPIO_CLR = 1<<21;
         //write_command(0x20);
     	printf("passing loop\n");
