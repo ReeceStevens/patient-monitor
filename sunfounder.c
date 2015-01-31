@@ -150,11 +150,11 @@ int mem_fd;
 void *gpio_map;
 void *spi_map;
 
-static const char *device = "/dev/spidev0.0";
+//static const char *device = "/dev/spidev0.0";
 static uint32_t mode;
 static uint8_t bits = 9;
 static uint32_t speed = 500000;
-static uint16_t delay;
+static uint16_t delay = 1;
 
 /*
  * setupio() - This function initializes a memory region to access GPIO
