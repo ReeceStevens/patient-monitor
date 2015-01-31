@@ -181,14 +181,14 @@ int setupio(){
         GPIO_BASE
     );
     // mmap SPI
-    spi_map = mmap(
+    /* spi_map = mmap(
         NULL,
         0x20, 
         PROT_READ|PROT_WRITE,
         MAP_SHARED,
         mem_fd,
         (GPIO_BASE+0x4000)
-    );
+    ); */
 
     close(mem_fd); // close after mmap is complete
     
@@ -196,16 +196,16 @@ int setupio(){
         printf("gpio mmap error\n");
         goto error;
     }
-
+    /*
     if (spi_map == MAP_FAILED) {
         printf("spi mmap error\n");
         goto error;
-    }
+    } */
 
     gpio = (volatile unsigned *)gpio_map;
     printf("gpio pins set up\n");
-    spi = (volatile unsigned *)spi_map;
-    printf("spi registers set up\n");
+    //spi = (volatile unsigned *)spi_map;
+    //printf("spi registers set up\n");
     
     return 0;
 
