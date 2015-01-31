@@ -605,7 +605,7 @@ void screenInitAdafruit(int fd){
 }
 
 int main(){
-    setupio();
+    //setupio();
     int fd = open("/dev/spidev0.0", O_RDWR);
     if (fd < 0) {
         printf("Unable to open spidev0.0\n");
@@ -617,7 +617,7 @@ int main(){
     //printf("Adafruit version of setup is complete\n");
     rc = screen_init(fd);
     //rc = screen_shutdown(fd);
-    led_heartbeat_setup();
+    //led_heartbeat_setup();
     if (rc) {
         goto error;
     }
@@ -626,7 +626,7 @@ int main(){
     while(1){
         fillScreen(0x0000, fd);
 	    writeCommand(CMD_MEM_WRITE, fd);
-        GPIO_CLR = 1<<21;
+        //GPIO_CLR = 1<<21;
         //write_command(0x20);
     	printf("passing loop\n");
         while (i) {
@@ -635,7 +635,7 @@ int main(){
         i = 100000000;
         fillScreen(0xFFFF, fd);
     	writeCommand(CMD_MEM_WRITE, fd);
-    	GPIO_SET = 1<<21;
+    	//GPIO_SET = 1<<21;
         //write_command(0x21);
         while (i) {
             i--;
