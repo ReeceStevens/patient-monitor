@@ -255,7 +255,7 @@ error:
 
 uint8_t spi_setup_test(int fd){
     mode = 0x0;
-    fd = open(device, O_RDWR);
+    //fd = open(device, O_RDWR);
     if (fd < 0) {
         printf("Unable to open spidev0.0\n");
         goto error;
@@ -612,6 +612,7 @@ int main(){
         goto error;
     }
     uint8_t rc = spi_setup_test(fd);
+    if (rc) goto error;
     //screenInitAdafruit(fd);
     //printf("Adafruit version of setup is complete\n");
     rc = screen_init(fd);
