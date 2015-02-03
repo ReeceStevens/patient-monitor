@@ -36,7 +36,8 @@
 #define CMD_MEM_READ 0x2E
 #define CMD_PARTIAL_AREA 0x30
 #define CMD_VERT_SCROLL_DEF 0x33
-#define CMD_TEARING_EFFECT_LINE_OFF 0x34 #define CMD_TEARING_EFFECT_LINE_ON 0x35
+#define CMD_TEARING_EFFECT_LINE_OFF 0x34 
+#define CMD_TEARING_EFFECT_LINE_ON 0x35
 #define CMD_MEM_ACCESS_CTL 0x36
 #define CMD_VERT_SCROLL_START_ADDR 0x37
 #define CMD_IDLE_MODE_OFF 0x38
@@ -212,10 +213,85 @@ void spiSetup()
 
 }
 
+// Screen Specific Functions and Commands
+// Modified from Adafruit_ILI9341.cpp
+//
+uint8_t setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
+	writeCommand(CMD_COLUMN_ADDR_SET);
+	// Write X Start
+	writeData(x0 >> 8);
+	writeData(x0 & 0xFF);
+	// Write X End
+	writeData(x1 >> 8);
+	writeData(x1 & 0xFF);
+
+	writeCommand(CMD_PAGE_ADDR_SET);
+	// Write Y Start
+	writeData(y0 >> 8);
+	writeData(y0 & 0xFF);
+	// Write Y End
+	writeData(y1 >> 8);
+	writeData(y1 & 0xFF);
+
+	writeCommand(CMD_MEM_WRITE);
+
+	return 0;
+}
+
+uint8_t setColor(uint16_t color){
+	writeData(color >> 8);
+	writeData(color);
+	return 0;
+}
+
+uint8_t drawPixel(uint16_t x, uint16_t y, uint16_t color){
+	if ((x >= 320) | (y >= 240)) {goto error;}
+	setAddressWindow(x, y, x+1, y+1);
+	setColor(color);
+	
+	return 0;
+error:
+	return 1;
+}
+
+uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color){
+	// Check to ensure we don't go out of bounds
+	if ((x >= 320) || (y >= 240)) {goto error;}
+	if ((x + w - 1) >= 320) { w = 320 - x;}
+	if ((y + h - 1) >= 240) { h = 240 - y;}
+
+	setAddressWindow(x, y, x+w-1, y+h-1);
+	setColor(color);
+	return 0;
+
+error: 
+	return 1;
+}
+
+uint8_t fillScreen(uint16_t color){
+	fillRectangle(0, 0, 320, 240, color);
+	return 0;
+}
+
+uint8_t screen_init(){
+	writeCommand(CMD_DISP_ON);
+	writeCommand(CMD_SLEEP_MODE_OFF);
+    writeCommand(CMD_DISP_ID);
+	writeCommand(CMD_DISP_ON);
+	writeCommand(CMD_SLEEP_MODE_OFF);
+    printf("Commands written to screen\n");
+	return 0;
+}
+
+uint8_t screen_shutdown(){
+	writeCommand(CMD_DISP_OFF);
+	return 0;
+}
+
 int main(){
     spiSetup();
-    writeData(0xFF);
-    writeData(0xFF);
+    screen_init();
+    fillScreen(0xFAFA);
     close(fd);
     return 0;
 
