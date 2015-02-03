@@ -288,9 +288,84 @@ uint8_t screen_shutdown(){
 	return 0;
 }
 
+void screenInitAdafruit(){
+    writeCommand(0xEF);
+    writeData(0x03);
+    writeData(0x80);
+    writeData(0x02);
+
+    writeCommand(0xCF);
+    writeData(0x00);
+    writeData(0xC1);
+    writeData(0x30);
+
+    writeCommand(0xED);
+    writeData(0x64);
+    writeData(0x03);
+    writeData(0x12);
+    writeData(0x81);
+
+    writeCommand(0xE8);
+    writeData(0x85);
+    writeData(0x00);
+    writeData(0x78);
+
+    writeCommand(0xCB);
+    writeData(0x39);
+    writeData(0x2C);
+    writeData(0x00);
+    writeData(0x34);
+    writeData(0x02);
+
+    writeCommand(0xF7);
+    writeData(0x20);
+
+    writeCommand(0xEA);
+    writeData(0x00);
+    writeData(0x00);
+
+    writeCommand(0xC0); // Power control
+    writeData(0x23);
+
+    writeCommand(0xC1);
+    writeData(0x10);
+
+    writeCommand(0xC5); // VCM Control
+    writeData(0x3E);
+    writeData(0x28);
+
+    writeCommand(0xC7);
+    writeData(0x86);
+
+    writeCommand(0x36); // Memory Access Control
+    writeData(0x48);
+
+    writeCommand(0x3A);
+    writeData(0x55);
+
+    writeCommand(0xB1);
+    writeData(0x00);
+    writeData(0x18);
+
+    writeCommand(0xB6); // Display function control
+    writeData(0x08);
+    writeData(0x82);
+    writeData(0x27);
+
+    writeCommand(0xF2); // Disable 3Gamma Function
+    writeData(0x00);
+
+    writeCommand(CMD_SLEEP_MODE_OFF);
+    // Delay and give the screen time
+    writeCommand(CMD_DISP_ON);
+    return;
+    
+}
+
 int main(){
     spiSetup();
-    screen_init();
+    screenInitAdafruit();
+    //screen_init();
     fillScreen(0xFAFA);
     close(fd);
     return 0;
