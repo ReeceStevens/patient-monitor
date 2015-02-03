@@ -70,12 +70,12 @@
 #define CMD_POWER_CTRL_2 0xC1
 #define CMD_INTERFACE_CTRL 0xF6
 
-static const char *device = "/dev/spidev0.0";
+static const char *device = "/dev/spidev0.1";
 static uint32_t mode;
 static uint8_t bits = 9;
 static uint32_t speed = 500000;
 static uint16_t delay;
-static uint32_t fd;
+static int fd;
 
 static void writeData(uint8_t data)
 {
