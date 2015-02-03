@@ -12,7 +12,7 @@
 
 static const char *device = "/dev/spidev0.0";
 static uint32_t mode;
-static uint8_t bits = 8;
+static uint8_t bits = 9;
 static uint32_t speed = 500000;
 static uint16_t delay;
 static uint32_t fd;
@@ -21,7 +21,7 @@ static void transfer(uint16_t data)
 {
 	int ret;
 	uint16_t tx[] = {
-		0x1FF
+		data
 	};
 	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
 	struct spi_ioc_transfer tr = {
@@ -114,5 +114,6 @@ int main(){
     transfer(0x01FF);
     transfer(0x01FF);
     close(fd);
+    return 0;
 
 }
