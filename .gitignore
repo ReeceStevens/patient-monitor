@@ -2,3 +2,5 @@
 *.o
 *.swp
 *.dSYM
+*.aux
+*.log
