@@ -12,6 +12,6 @@ construct traditional monitor sensors from basic components.
 Hardware
 --------
 
-- Raspberry Pi B+
+- Teensy
 - SunFounder 2.8" TFT Screen
 
