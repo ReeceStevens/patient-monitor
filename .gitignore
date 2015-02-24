@@ -1,4 +1,6 @@
 .ycm*
 *.o
 *.swp
-spidev_test.c
+*.dSYM
+*.aux
+*.log

@@ -4,12 +4,18 @@
 // Date: 1.7.15
 // Author: Reece Stevens
 
-#include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+#include <sys/mman.h>
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 // Useful debug macros
 #include "dbg.h"
@@ -144,6 +150,12 @@ int mem_fd;
 void *gpio_map;
 void *spi_map;
 
+//static const char *device = "/dev/spidev0.0";
+static uint32_t mode;
+static uint8_t bits = 9;
+static uint32_t speed = 500000;
+static uint16_t delay = 1;
+
 /*
  * setupio() - This function initializes a memory region to access GPIO
  * Parameters - none
@@ -152,9 +164,8 @@ void *spi_map;
 int setupio(){
     // open /dev/mem
     
-    // NOTE: Some Linux kernels (namely, default Arch Linux) don't allow
-    // any direct access to /dev/mem. This causes an immediate segfault, 
-    // even as root. 
+    // NOTE: If you're getting a segfault, don't forget to chmod +rw /dev/mem
+    // so that you can access the gpio and spi registers
     if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
         printf("Can't open /dev/mem\n");
         goto error;
@@ -169,15 +180,15 @@ int setupio(){
         mem_fd,
         GPIO_BASE
     );
-
-    spi_map = mmap(
+    // mmap SPI
+    /* spi_map = mmap(
         NULL,
         0x20, 
         PROT_READ|PROT_WRITE,
         MAP_SHARED,
         mem_fd,
         (GPIO_BASE+0x4000)
-    );
+    ); */
 
     close(mem_fd); // close after mmap is complete
     
@@ -185,16 +196,16 @@ int setupio(){
         printf("gpio mmap error\n");
         goto error;
     }
-
+    /*
     if (spi_map == MAP_FAILED) {
         printf("spi mmap error\n");
         goto error;
-    }
+    } */
 
     gpio = (volatile unsigned *)gpio_map;
     printf("gpio pins set up\n");
-    spi = (volatile unsigned *)spi_map;
-    printf("spi registers set up\n");
+    //spi = (volatile unsigned *)spi_map;
+    //printf("spi registers set up\n");
     
     return 0;
 
@@ -242,6 +253,143 @@ error:
     return 1;
 }
 
+uint8_t spi_setup_test(int fd){
+    mode = 0x0;
+    //fd = open(device, O_RDWR);
+    if (fd < 0) {
+        printf("Unable to open spidev0.0\n");
+        goto error;
+    }
+
+    int ret = ioctl(fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
+    if (ret == -1) {
+        printf("Unable to write bits per word\n");
+        goto error;
+    }
+    bits = 1;
+    ret = ioctl(fd, SPI_IOC_RD_BITS_PER_WORD, &bits);
+    if (ret == -1) {
+        printf("Unable to read bits per word\n");
+        goto error;
+    }
+
+	ret = ioctl(fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+    if (ret == -1) {
+        printf("Unable to write max speed\n");
+        goto error;
+    }
+	ret = ioctl(fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
+    if (ret == -1) {
+        printf("Unable to read max speed\n");
+        goto error;
+    }
+
+    ret = ioctl(fd, SPI_IOC_RD_MODE, &mode);
+    if (ret == -1) {
+        printf("Unable to read mode\n");
+        goto error;
+    }
+    ret = ioctl(fd, SPI_IOC_WR_MODE, &mode);
+    if (ret == -1) {
+        printf("Unable to write mode\n");
+        goto error;
+    }
+
+	printf("spi mode: 0x%x\n", mode);
+	printf("bits per word: %d\n", bits);
+	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
+    
+    return 0;
+error:
+    return 1;
+}
+
+void writeCommand(int fd, uint16_t command)
+{
+	int ret;
+	uint16_t tx[] = {
+		command
+	};
+	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx,
+		.rx_buf = (unsigned long)rx,
+		.len = ARRAY_SIZE(tx),
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
+
+	if (mode & SPI_TX_QUAD)
+		tr.tx_nbits = 4;
+	else if (mode & SPI_TX_DUAL)
+		tr.tx_nbits = 2;
+	if (mode & SPI_RX_QUAD)
+		tr.rx_nbits = 4;
+	else if (mode & SPI_RX_DUAL)
+		tr.rx_nbits = 2;
+	if (!(mode & SPI_LOOP)) {
+		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+			tr.rx_buf = 0;
+		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+			tr.tx_buf = 0;
+	}
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		printf("can't send spi message\n");
+
+	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.3X ", rx[ret]);
+	}
+	puts("");
+}
+ 
+void writeData(int fd, uint16_t data)
+{
+	int ret;
+	uint16_t tx[] = {
+		data + 0x0100
+	};
+	uint16_t rx[ARRAY_SIZE(tx)] = {0, };
+	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx,
+		.rx_buf = (unsigned long)rx,
+		.len = ARRAY_SIZE(tx),
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
+
+	if (mode & SPI_TX_QUAD)
+		tr.tx_nbits = 4;
+	else if (mode & SPI_TX_DUAL)
+		tr.tx_nbits = 2;
+	if (mode & SPI_RX_QUAD)
+		tr.rx_nbits = 4;
+	else if (mode & SPI_RX_DUAL)
+		tr.rx_nbits = 2;
+	if (!(mode & SPI_LOOP)) {
+		if (mode & (SPI_TX_QUAD | SPI_TX_DUAL))
+			tr.rx_buf = 0;
+		else if (mode & (SPI_RX_QUAD | SPI_RX_DUAL))
+			tr.tx_buf = 0;
+	}
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		printf("can't send spi message\n");
+
+	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.2X ", rx[ret]);
+	}
+	puts("");
+}
+
 /*
  * write_data(data) - Write a uint16_t number to the transmit
  * FIFO of the SPI interface.
@@ -268,10 +416,7 @@ uint8_t write_data(uint16_t data){
     // Clear TA
     *(CS) &= ~0x080;
 
-    return 0;
-    
-error:
-    return 1;
+    return 0; error: return 1;
 }
 
 /*
@@ -305,106 +450,202 @@ error:
     return 1;
 }
 
-uint8_t screen_init(void){
-	spi_setup();
-	write_command(CMD_DISP_ON);
-	write_command(CMD_SLEEP_MODE_OFF);
-	return 0;
-}
-
 
 // Modified from Adafruit_ILI9341.cpp
 //
-uint8_t setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
-	write_command(CMD_COLUMN_ADDR_SET);
+uint8_t setAddressWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, int fd){
+	writeCommand(CMD_COLUMN_ADDR_SET,fd);
 	// Write X Start
-	write_data(x0 >> 8);
-	write_data(x0 & 0xFF);
+	writeData(x0 >> 8, fd);
+	writeData(x0 & 0xFF, fd);
 	// Write X End
-	write_data(x1 >> 8);
-	write_data(x1 & 0xFF);
+	writeData(x1 >> 8, fd);
+	writeData(x1 & 0xFF, fd);
 
-	write_command(CMD_PAGE_ADDR_SET);
+	writeCommand(CMD_PAGE_ADDR_SET, fd);
 	// Write Y Start
-	write_data(y0 >> 8);
-	write_data(y0 & 0xFF);
+	writeData(y0 >> 8, fd);
+	writeData(y0 & 0xFF, fd);
 	// Write Y End
-	write_data(y1 >> 8);
-	write_data(y1 & 0xFF);
+	writeData(y1 >> 8, fd);
+	writeData(y1 & 0xFF, fd);
 
-	write_command(CMD_MEM_WRITE);
+	writeCommand(CMD_MEM_WRITE, fd);
 
 	return 0;
 }
 
-uint8_t setColor(uint16_t color){
-	write_data(color >> 8);
-	write_data(color);
+uint8_t setColor(uint16_t color, int fd){
+	writeData(color >> 8, fd);
+	writeData(color, fd);
 	return 0;
 }
 
-uint8_t drawPixel(uint16_t x, uint16_t y, uint16_t color){
+uint8_t drawPixel(uint16_t x, uint16_t y, uint16_t color, int fd){
 	if ((x >= 320) | (y >= 240)) {goto error;}
-	setAddressWindow(x, y, x+1, y+1);
-	setColor(color);
+	setAddressWindow(x, y, x+1, y+1, fd);
+	setColor(color, fd);
 	
 	return 0;
 error:
 	return 1;
 }
 
-uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color){
+uint8_t fillRectangle(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color, int fd){
 	// Check to ensure we don't go out of bounds
 	if ((x >= 320) || (y >= 240)) {goto error;}
 	if ((x + w - 1) >= 320) { w = 320 - x;}
 	if ((y + h - 1) >= 240) { h = 240 - y;}
 
-	setAddressWindow(x, y, x+w-1, y+h-1);
-	setColor(color);
+	setAddressWindow(x, y, x+w-1, y+h-1, fd);
+	setColor(color, fd);
 	return 0;
 
 error: 
 	return 1;
 }
 
-uint8_t fillScreen(uint16_t color){
-	fillRectangle(0, 0, 320, 240, color);
+uint8_t fillScreen(uint16_t color, int fd){
+	fillRectangle(0, 0, 320, 240, color, fd);
 	return 0;
 }
 
+uint8_t screen_init(int fd){
+	//spi_setup();
+    uint32_t delayer = 100000;
+    while (delayer){
+        delayer --;
+    }
+	writeCommand(CMD_DISP_ON, fd);
+	writeCommand(CMD_SLEEP_MODE_OFF, fd);
+    writeCommand(CMD_DISP_ID, fd);
+	writeCommand(CMD_DISP_ON, fd);
+	writeCommand(CMD_SLEEP_MODE_OFF, fd);
+    printf("Commands written to screen\n");
+	return 0;
+}
 
+uint8_t screen_shutdown(int fd){
+	writeCommand(CMD_DISP_OFF, fd);
+	return 0;
+}
 
+void screenInitAdafruit(int fd){
+    writeCommand(0xEF, fd);
+    writeData(0x03, fd);
+    writeData(0x80, fd);
+    writeData(0x02, fd);
+
+    writeCommand(0xCF, fd);
+    writeData(0x00, fd);
+    writeData(0xC1, fd);
+    writeData(0x30, fd);
+
+    writeCommand(0xED, fd);
+    writeData(0x64, fd);
+    writeData(0x03, fd);
+    writeData(0x12, fd);
+    writeData(0x81, fd);
+
+    writeCommand(0xE8, fd);
+    writeData(0x85, fd);
+    writeData(0x00, fd);
+    writeData(0x78, fd);
+
+    writeCommand(0xCB, fd);
+    writeData(0x39, fd);
+    writeData(0x2C, fd);
+    writeData(0x00, fd);
+    writeData(0x34, fd);
+    writeData(0x02, fd);
+
+    writeCommand(0xF7, fd);
+    writeData(0x20, fd);
+
+    writeCommand(0xEA, fd);
+    writeData(0x00, fd);
+    writeData(0x00, fd);
+
+    writeCommand(0xC0, fd); // Power control
+    writeData(0x23, fd);
+
+    writeCommand(0xC1, fd);
+    writeData(0x10, fd);
+
+    writeCommand(0xC5, fd); // VCM Control
+    writeData(0x3E, fd);
+    writeData(0x28, fd);
+
+    writeCommand(0xC7, fd);
+    writeData(0x86, fd);
+
+    writeCommand(0x36, fd); // Memory Access Control
+    writeData(0x48, fd);
+
+    writeCommand(0x3A, fd);
+    writeData(0x55, fd);
+
+    writeCommand(0xB1, fd);
+    writeData(0x00, fd);
+    writeData(0x18, fd);
+
+    writeCommand(0xB6, fd); // Display function control
+    writeData(0x08, fd);
+    writeData(0x82, fd);
+    writeData(0x27, fd);
+
+    writeCommand(0xF2, fd); // Disable 3Gamma Function
+    writeData(0x00, fd);
+
+    writeCommand(CMD_SLEEP_MODE_OFF, fd);
+    // Delay and give the screen time
+    writeCommand(CMD_DISP_ON, fd);
+    return;
+    
+}
 
 int main(){
-    printf("hello there main");
     //setupio();
-    uint8_t rc = screen_init();
-    led_heartbeat_setup();
+    int fd = open("/dev/spidev0.0", O_RDWR);
+    if (fd < 0) {
+        printf("Unable to open spidev0.0\n");
+        goto error;
+    }
+    uint8_t rc = spi_setup_test(fd);
+    if (rc) goto error;
+    //screenInitAdafruit(fd);
+    //printf("Adafruit version of setup is complete\n");
+    rc = screen_init(fd);
+    //rc = screen_shutdown(fd);
+    //led_heartbeat_setup();
     if (rc) {
-        return 1;
+        goto error;
     }
     uint32_t i = 100;
-    printf("setup is complete");
+    printf("setup is complete\n");
     while(1){
-        fillScreen(0x0000);
-	write_command(CMD_MEM_WRITE);
-        GPIO_CLR = 1<<21;
+        fillScreen(0x0000, fd);
+	    writeCommand(CMD_MEM_WRITE, fd);
+        //GPIO_CLR = 1<<21;
         //write_command(0x20);
-	printf("passing loop\n");
+    	printf("passing loop\n");
         while (i) {
             i--;
         }
         i = 100000000;
-        fillScreen(0xFFFF);
-	write_command(CMD_MEM_WRITE);
-	GPIO_SET = 1<<21;
+        fillScreen(0xFFFF, fd);
+    	writeCommand(CMD_MEM_WRITE, fd);
+    	//GPIO_SET = 1<<21;
         //write_command(0x21);
         while (i) {
             i--;
         }
         i = 100000000;
     }
+    close(fd);
     return 0;
-
+error:
+    close(fd);
+    return 1;
 }
 
