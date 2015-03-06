@@ -1,13 +1,14 @@
 #include <Adafruit_ILI9341.h>
 #include "interface.h"
 
-class button {
-	public:
-		int coord_x;
-		int coord_y;
-		int length;
-		int width;
-		int color;
+// Constructor
+button::button(int coord_x, int coord_y, int length, int width, int color, bool visible) {
+	_coord_x = coord_x;
+	_coord_y = coord_y;
+	_length = length;
+	_width = width;
+	_color = color;
+	_visible = visible;
 }
 
 void button::draw(Adafruit_ILI9341 tft){

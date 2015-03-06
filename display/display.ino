@@ -5,14 +5,14 @@
 #include <Adafruit_STMPE610.h>
 #include <Wire.h>
 
+#include "interface.h"
+
 #define CS_TOUCH 8
 #define CS_SCREEN  10
 #define DC 9
 #define RST 7
 
 // This is calibration data for the raw touch data to the screen coordinates
-//#define TS_MINX 150
-//#define TS_MINY 130
 #define TS_MINX 150
 #define TS_MINY 130
 #define TS_MAXX 3800
@@ -26,15 +26,28 @@ int timeout = 0;
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS_SCREEN, DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 
+// Create submenu buttons
+button hr_button = button(0,0,BOXSIZE,BOXSIZE,ILI9341_RED,true);
+button sp_button = button(0,BOXSIZE,BOXSIZE,BOXSIZE,ILI9341_GREEN,true);
+button temp_button = button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true);
+button alarm_button = button(0,BOXSIZE*3,BOXSIZE,BOXSIZE,ILI9341_MAGENTA,true);
+
 /*
  * draw_submenu() - draws color box submenu on left of screen
  */
+void draw_submenu() {
+	hr_button.draw(tft);
+	sp_button.draw(tft);
+	temp_button.draw(tft);
+	alarm_button.draw(tft);
+}
+/*
 void draw_submenu(){
   tft.fillRect(0,0,BOXSIZE,BOXSIZE,ILI9341_RED);
   tft.fillRect(0, BOXSIZE,BOXSIZE,BOXSIZE, ILI9341_GREEN);
   tft.fillRect(0,BOXSIZE*2, BOXSIZE, BOXSIZE, ILI9341_BLUE);
   tft.fillRect(0, BOXSIZE*3, BOXSIZE, BOXSIZE, ILI9341_MAGENTA);
-}
+}*/
 
 /*
  * product_title() - prints product name and version no.
