@@ -20,38 +20,48 @@
 
 #define BOXSIZE 60
 
+int currentMode = 0; // Change mode
+int timeout = 0;
+
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS_SCREEN, DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 
-void setup(void){
-  Serial.begin(9600);
-  tft.begin();
-  if (!ts.begin()){
-    Serial.println("Unable to start touchscreen");
-  }
-  else {
-    Serial.println("Touchscreen started.");
-  }
-  
-  tft.fillScreen(ILI9341_BLACK);
-  tft.setRotation(1);
- 
-  
-  // Make submenu selection boxes
+/*
+ * draw_submenu() - draws color box submenu on left of screen
+ */
+void draw_submenu(){
   tft.fillRect(0,0,BOXSIZE,BOXSIZE,ILI9341_RED);
   tft.fillRect(0, BOXSIZE,BOXSIZE,BOXSIZE, ILI9341_GREEN);
   tft.fillRect(0,BOXSIZE*2, BOXSIZE, BOXSIZE, ILI9341_BLUE);
   tft.fillRect(0, BOXSIZE*3, BOXSIZE, BOXSIZE, ILI9341_MAGENTA);
+}
+
+/*
+ * product_title() - prints product name and version no.
+ */
+void product_title(){
   tft.setCursor(BOXSIZE + 20, 0);
   tft.setTextSize(1);
   tft.println("Texas Engineering World Health");
   tft.setCursor(BOXSIZE + 40, 10);
   tft.println("Patient Monitor v1.0");
-
 }
 
-int currentMode = 0; // Change mode
-int timeout = 0;
+/*
+ * gui_setup() - initialize interface
+ */
+void gui_setup(){
+	tft.begin();
+	ts.begin();
+	tft.fillScreen(ILI9341_BLACK);
+	tft.setRotation(1);
+	draw_submenu();
+}
+
+void setup(void){
+  gui_setup();
+  product_title();  
+}
 
 void loop(void) {
   timeout ++;
