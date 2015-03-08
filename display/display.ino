@@ -71,6 +71,10 @@ void gui_setup(){
 	draw_submenu();
 }
 
+void clearScreen(int color){
+    tft.fillRect(BOXSIZE,0,tft.width()-BOXSIZE,tft.height(),color);
+}
+
 void setup(void){
   gui_setup();
   product_title();  
@@ -80,7 +84,7 @@ void loop(void) {
   timeout ++;
   // After timeout, wipe message from screen
   if (timeout > 50000) {
-     tft.fillRect(BOXSIZE, 50, tft.width()-BOXSIZE, tft.height(), ILI9341_BLACK);
+     clearScreen(ILI9341_BLACK);
   }
   
   // Touch screen interfacing taken from touchpaint.ino example
@@ -92,12 +96,18 @@ void loop(void) {
   }
   // Retrieve the touch point
   TS_Point p = ts.getPoint();
+  while(!ts.bufferEmpty()){
+      TS_Point throwaway = ts.getPoint(); 
+  }
   // Scale from 0-4000 to tft.width() using calibration numbers
-  p.x = map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
+  p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
   p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
+  int temp = p.y;
+  p.y = p.x;
+  p.x = temp;
   
   // Do stuff with the coordinates of the touch
-  
+  /*
   if (p.y < BOXSIZE){
    if (p.x < BOXSIZE) {
      if (currentMode != 1){
@@ -142,6 +152,13 @@ void loop(void) {
    }
    
     
+  }*/
+  if (temp_button.isTapped(p.x,p.y)){
+        if(!temp_button.lastTapped){
+            clearScreen(ILI9341_BLUE);
+        }
+  } else {
+    temp_button.lastTapped = false;
   }
 
 }
