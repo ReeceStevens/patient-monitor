@@ -26,11 +26,17 @@ int timeout = 0;
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS_SCREEN, DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 
+// NOTE: tft.height() and tft.width() are mixed up due to orientation issues in the Adafruit drivers.
+// tft.height() returns the width (x-axis), while tft.width() returns the height (y-axis)
+
 // Create submenu buttons
 Button hr_button = Button(0,0,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
 Button sp_button = Button(0,BOXSIZE,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
 Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
 Button alarm_button = Button(0,BOXSIZE*3,BOXSIZE,BOXSIZE,ILI9341_MAGENTA,true,&tft);
+
+// Create ECG trace
+ECGReadout ecg = ECGReadout(0,tft.height()-200,tft.height(), tft.width()/2, 15, 500, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -61,7 +67,8 @@ void gui_setup(){
 	ts.begin();
 	tft.fillScreen(ILI9341_BLACK);
 	tft.setRotation(1);
-	draw_submenu();
+	ecg.draw();
+	//draw_submenu();
 }
 
 void clearScreen(int color){
@@ -74,16 +81,18 @@ void setup(void){
 }
 
 void loop(void) {
-  timeout ++;
+  //timeout ++;
   // After timeout, wipe message from screen
+  /*
   if (timeout > 50000) {
      clearScreen(ILI9341_BLACK);
+	 product_title();
      timeout = 0;
-  }
+  } */
   
   // Touch screen interfacing taken from touchpaint.ino example
   // in the ILI9341 examples directory
-  
+  ecg.read();
   // Check if there is touch data
   if (ts.bufferEmpty()){
     return;
@@ -101,59 +110,23 @@ void loop(void) {
   p.x = temp;
   
   // Do stuff with the coordinates of the touch
-  /*
-  if (p.y < BOXSIZE){
-   if (p.x < BOXSIZE) {
-     if (currentMode != 1){
-      tft.fillRect(BOXSIZE, 50, tft.width()-BOXSIZE, tft.height(), ILI9341_BLACK);
-     tft.setCursor((tft.width()/2) -50, tft.height()/2);
-     tft.setTextSize(2);
-     tft.setTextColor(ILI9341_MAGENTA);
-     tft.println("Alarm Settings"); 
-     currentMode = 1;
-     timeout = 0;
-     }
-   } else if (p.x < BOXSIZE*2) {
-     if (currentMode != 2) {
-     tft.fillRect(BOXSIZE, 50, tft.width()-BOXSIZE, tft.height(), ILI9341_BLACK); 
-     tft.setCursor((tft.width()/2) -50, tft.height()/2);
-     tft.setTextSize(2);
-     tft.setTextColor(ILI9341_BLUE);
-     tft.println("Temperature");  
-     currentMode = 2;
-     timeout = 0;
-     }
-   } else if (p.x < BOXSIZE*3){
-     if (currentMode != 3) {
-     tft.fillRect(BOXSIZE, 50, tft.width()-BOXSIZE, tft.height(), ILI9341_BLACK);
-     tft.setCursor((tft.width()/2) -50, tft.height()/2);
-     tft.setTextSize(2);
-     tft.setTextColor(ILI9341_GREEN);
-     tft.println("SpO2"); 
-     currentMode = 3;
-     timeout = 0;
-     }
-   } else if (p.x < BOXSIZE*4){
-     if (currentMode != 4){
-     tft.fillRect(BOXSIZE, 50, tft.width()-BOXSIZE, tft.height(), ILI9341_BLACK);
-     tft.setCursor((tft.width()/2) -50, tft.height()/2);
-     tft.setTextSize(2);
-     tft.setTextColor(ILI9341_RED);
-     tft.println("Heart Rate"); 
-     currentMode = 4; 
-     timeout = 0;
-     }
-   }
-   
-    
-  }*/
+  /* 
   if (temp_button.isTapped(p.x,p.y)){
         if(!temp_button.lastTapped){
-            clearScreen(ILI9341_BLUE);
+			// Debugging the analog read
+            tft.setCursor((tft.width()/2) -50, tft.height()/2);
+     		tft.setTextSize(2);
+     		tft.setTextColor(ILI9341_RED);
+			int num = analogRead(15);
+			String readout = String(num);
+			clearScreen(ILI9341_BLACK);
+     		tft.println(readout); 
         }
   } else {
     temp_button.lastTapped = false;
   }
+*/
+  
 
 }
   
