@@ -36,7 +36,7 @@ Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
 Button alarm_button = Button(0,BOXSIZE*3,BOXSIZE,BOXSIZE,ILI9341_MAGENTA,true,&tft);
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(0,tft.height()-200,tft.height(), tft.width()/2, 15, 500, &tft);
+ECGReadout ecg = ECGReadout(0,60,tft.height(), tft.width()/2, 15 , 500, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -109,6 +109,14 @@ void loop(void) {
   p.y = p.x;
   p.x = temp;
   
+			// Debugging the analog read
+            tft.setCursor((tft.width()/2) -50, tft.height()/2);
+     		tft.setTextSize(2);
+     		tft.setTextColor(ILI9341_RED);
+			int num = analogRead(15);
+			String readout = String(num);
+			clearScreen(ILI9341_BLACK);
+     		tft.println(readout); 
   // Do stuff with the coordinates of the touch
   /* 
   if (temp_button.isTapped(p.x,p.y)){

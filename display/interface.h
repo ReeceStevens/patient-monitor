@@ -27,7 +27,7 @@ class ECGReadout {
 			int* databuffer;
 			int reset_timer;
 			int current_timer;
-			int scaling_factor;
+			double scaling_factor;
 			int buffer_contents;
 			Adafruit_ILI9341* tft_interface;
 
