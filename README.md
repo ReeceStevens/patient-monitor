@@ -1,17 +1,16 @@
-# UT Patient Monitor
+# TEWH Patient Monitor
 
-Texas Engineering World Health's 2015 Design Competition Project.
-Project Start Date: 1.7.14
+Texas Engineering World Health introduces a low-cost, portable patient
+monitor designed for resource-scarce environments.
 
-Goal
-----
-
-Implement a low-cost patient monitor using a Teensyduino and 
-construct traditional monitor sensors from basic components.
-
-Hardware
+Features
 --------
+- ECG monitoring
+- Portable design
+- Touch screen interface
 
-- Teensyduino
-- SunFounder 2.8" TFT Screen
-
+In Development
+--------------
+- SpO2 probe
+- DC and AC power supply support
+- Sturdy plastic enclosure
