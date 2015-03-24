@@ -7,14 +7,14 @@ class Button {
 			int len;
 			int width;
 			int color;
-            Adafruit_ILI9341* tft_interface;
+			Adafruit_ILI9341* tft_interface;
 
-    public:
+	public:
 			bool visible;
-            bool lastTapped;
+			bool lastTapped;
 			void draw(void);
 			bool isTapped(int, int);
-            Button(int,int,int,int,int,bool,Adafruit_ILI9341*);
+			Button(int,int,int,int,int,bool,Adafruit_ILI9341*);
 };
 
 class ECGReadout {

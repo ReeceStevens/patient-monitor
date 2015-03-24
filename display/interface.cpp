@@ -54,14 +54,7 @@ void ECGReadout::read(){
 	// with a 5V max
 	double input_num = (double) analogRead(15);
 	input_num =  input_num * len;
-        input_num = input_num / 500;
-    /*tft_interface->setCursor((tft_interface->width()/2) -50, tft_interface->height()/2);
-     		tft_interface->setTextSize(2);
-     		tft_interface->setTextColor(ILI9341_RED);
-			String readout = String(input_num);
-
-    tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_BLACK);
-     		tft_interface->println(readout); */
+    input_num = input_num / 900;
 	// shift all buffer contents down one
 	for (int i = buffer_contents; i > 0; i--){
 		tft_interface->drawPixel(coord_x + i, coord_y + databuffer[i], ILI9341_BLACK);

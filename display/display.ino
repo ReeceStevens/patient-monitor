@@ -26,8 +26,11 @@ int timeout = 0;
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS_SCREEN, DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 
+#define HEIGHT tft.width()
+#define WIDTH tft.height()
 // NOTE: tft.height() and tft.width() are mixed up due to orientation issues in the Adafruit drivers.
 // tft.height() returns the width (x-axis), while tft.width() returns the height (y-axis)
+// hence this awkward macro
 
 // Create submenu buttons
 Button hr_button = Button(0,0,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
