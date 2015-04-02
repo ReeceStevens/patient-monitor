@@ -39,11 +39,17 @@ Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
 Button alarm_button = Button(0,BOXSIZE*3,BOXSIZE,BOXSIZE,ILI9341_MAGENTA,true,&tft);
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(0,60,tft.height(), tft.width()/2, 15 , 500, &tft);
+ECGReadout ecg = ECGReadout(10,60,tft.height(), tft.width()/2, 15 , 500, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
  */
+ 
+ //Write labels
+char ecgLabel[4] = "ECG";
+char satLabel[5] = "sp02";
+
+//old model interface
 void draw_submenu() {
 	hr_button.draw();
 	sp_button.draw();
@@ -60,6 +66,9 @@ void product_title(){
   tft.println("Texas Engineering World Health");
   tft.setCursor(BOXSIZE + 40, 10);
   tft.println("Patient Monitor v1.0");
+  tft.drawFastVLine(BOXSIZE + 17, 0, 20, ILI9341_WHITE);
+  tft.drawFastHLine(BOXSIZE + 17, 20, 185, ILI9341_WHITE);
+  tft.drawFastVLine(BOXSIZE + 202, 0, 20, ILI9341_WHITE);
 }
 
 /*
@@ -74,6 +83,19 @@ void gui_setup(){
 	//draw_submenu();
 }
 
+void label_setup(int y_coord, char* letter){
+  while(*letter){
+    tft.setCursor(0,y_coord);
+    tft.printf("%c", *letter);
+    letter += 1;
+    y_coord += 8;
+  }
+}
+void ECG_setup(){
+  tft.setCursor(BOXSIZE + 55, 30);
+  tft.setTextSize(1);
+  tft.println("HR (bpm) - ECG");
+}
 void clearScreen(int color){
     tft.fillRect(BOXSIZE,0,tft.width()-BOXSIZE,tft.height(),color);
 }
@@ -81,6 +103,11 @@ void clearScreen(int color){
 void setup(void){
   gui_setup();
   product_title();  
+  ECG_setup();
+  tft.setTextColor(ILI9341_MAGENTA);
+  label_setup(65, ecgLabel);
+  tft.setTextColor(ILI9341_MAGENTA);
+  label_setup(95, satLabel);
 }
 
 void loop(void) {
