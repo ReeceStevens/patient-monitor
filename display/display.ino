@@ -7,6 +7,7 @@
 
 #include "interface.h"
 
+#define ILI9341_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define CS_TOUCH 8
 #define CS_SCREEN  10
 #define DC 9
@@ -36,18 +37,54 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 Button hr_button = Button(0,0,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
 Button sp_button = Button(0,BOXSIZE,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
 Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
-Button alarm_button = Button(0,BOXSIZE*3,BOXSIZE,BOXSIZE,ILI9341_MAGENTA,true,&tft);
+Button alarm_button = Button(260,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(10,60,tft.height(), tft.width()/2, 15 , 500, &tft);
+ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 500, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
  */
  
  //Write labels
-char ecgLabel[4] = "ECG";
-char satLabel[5] = "sp02";
+char Title[] = "Texas Engineering World Health";
+char Version[] = "Patient Monitor v1.0";
+char ecgTitle[] = "ECG/HR (bpm)";
+char ecgLabel[] = "ECG";
+char sp02Title[] = "sp02 (%Sat.)";
+char sp02Label[] = "sp02";
+char hrLabel[] = "HR";
+char satLabel[] = "Sat";
+char tempTitle[] = "Temperature";
+char farLabel[] = "Far";
+char celLabel[] = "Cel";
+char alarmLabel[] = "ALARM";
+char settingsLabel[] = "SETTINGS";
+/*
+ * vlabel_setup(int x_coord, int y_coord, char* letter, int color) - create vertical labels
+ */
+void createVLabel(int x_coord, int y_coord, char* label, int textsize, int color){
+  tft.setTextSize(textsize);
+  tft.setTextColor(color);
+  while(*label){
+    tft.setCursor(x_coord, y_coord);
+    tft.printf("%c", *label);
+    label += 1;
+    y_coord += 8;
+  }
+}
+
+void createHLabel(int x_coord, int y_coord, char* label,int textsize, int color){
+  tft.setTextSize(textsize);
+  tft.setTextColor(color);
+  tft.setCursor(x_coord, y_coord);
+  tft.setCursor(x_coord, y_coord);
+  while(*label){
+    tft.printf("%c", *label);
+    label += 1;
+  }
+}
+
 
 //old model interface
 void draw_submenu() {
@@ -61,11 +98,10 @@ void draw_submenu() {
  * product_title() - prints product name and version no.
  */
 void product_title(){
-  tft.setCursor(BOXSIZE + 20, 0);
-  tft.setTextSize(1);
-  tft.println("Texas Engineering World Health");
-  tft.setCursor(BOXSIZE + 40, 10);
-  tft.println("Patient Monitor v1.0");
+  createHLabel(BOXSIZE + 20, 0, Title, 1, ILI9341_WHITE);
+  createHLabel(BOXSIZE + 40, 10, Version, 1, ILI9341_WHITE);
+  
+  /* create border */
   tft.drawFastVLine(BOXSIZE + 17, 0, 20, ILI9341_WHITE);
   tft.drawFastHLine(BOXSIZE + 17, 20, 185, ILI9341_WHITE);
   tft.drawFastVLine(BOXSIZE + 202, 0, 20, ILI9341_WHITE);
@@ -83,19 +119,50 @@ void gui_setup(){
 	//draw_submenu();
 }
 
-void label_setup(int y_coord, char* letter){
-  while(*letter){
-    tft.setCursor(0,y_coord);
-    tft.printf("%c", *letter);
-    letter += 1;
-    y_coord += 8;
-  }
-}
+/*
+ * ECG_setup() - intialize ECG and HR interfaces
+ */
 void ECG_setup(){
-  tft.setCursor(BOXSIZE + 55, 30);
-  tft.setTextSize(1);
-  tft.println("HR (bpm) - ECG");
+  createHLabel(BOXSIZE + 55, 40, ecgTitle, 1, ILI9341_WHITE);
+  createVLabel(0, 56, ecgLabel, 1, ILI9341_MAGENTA);
+  createVLabel(tft.width()-45, 60, hrLabel, 1, ILI9341_MAGENTA);
+  tft.setCursor(tft.width()-30, 60);
+  tft.setTextSize(2);
+  tft.println("60");
 }
+
+/*
+ * sp02_setup() - intialize sp02 and % saturation interfaces
+ */
+void sp02_setup(){
+  createHLabel(BOXSIZE + 55, 95, sp02Title, 1, ILI9341_WHITE);
+  createVLabel(0, 111, sp02Label, 1, ILI9341_CYAN);
+  createVLabel(tft.width()-50, 112, satLabel, 1, ILI9341_CYAN);
+  tft.setCursor(tft.width()-40, 116);
+  tft.setTextSize(2);
+  tft.println("97%"); 
+}
+
+void temperature_setup(){
+  createHLabel(BOXSIZE + 55, 150, tempTitle, 1, ILI9341_WHITE);
+  createVLabel(30, 171, farLabel, 1, ILI9341_GREENYELLOW);
+  createVLabel(tft.width()-120, 171, celLabel, 1, ILI9341_GREENYELLOW);
+  tft.setCursor(50, 175);
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_GREENYELLOW);
+  tft.println("98.6");
+  tft.setCursor(tft.width()-100, 175);
+  tft.println("37");
+}
+
+void settings_setup(){
+    alarm_button.draw();
+    createHLabel(265, 210, alarmLabel, 1, ILI9341_BLACK);
+    createHLabel(265, 220, settingsLabel, 1, ILI9341_BLACK);
+}
+/*
+ * clearScreen(int color) - clear screen with specified color
+ */
 void clearScreen(int color){
     tft.fillRect(BOXSIZE,0,tft.width()-BOXSIZE,tft.height(),color);
 }
@@ -104,10 +171,9 @@ void setup(void){
   gui_setup();
   product_title();  
   ECG_setup();
-  tft.setTextColor(ILI9341_MAGENTA);
-  label_setup(65, ecgLabel);
-  tft.setTextColor(ILI9341_MAGENTA);
-  label_setup(95, satLabel);
+  sp02_setup();
+  temperature_setup();
+  settings_setup();
 }
 
 void loop(void) {
