@@ -16,6 +16,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include "ecg.h"
+
 // To determine heart rate, we need to know how fast 
 // our system is sampling. 
 
@@ -115,3 +117,14 @@ int ECGReadout::heart_rate() {
     double heart_rate = 60 / ((finish - start) * sampling_period);
     return heart_rate;
 }
+
+/*
+ * ECGReadout::check_okay(void) - check for waveform abnormalities
+ *
+ */
+bool ECGReadout::check_okay(void) {
+    int hr_threshold;
+      
+}
+
+

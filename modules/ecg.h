@@ -1,4 +1,6 @@
 #include <Adafruit_ILI9341.h>
+#ifndef _ecg_h
+#define _ecg_h
 
 class ECGReadout {
 	private:
@@ -8,6 +10,8 @@ class ECGReadout {
 			int width;
 			int pin;
 			int* databuffer;
+            int* input_buffer;
+            int* diff_buffer;
 			int reset_timer;
 			int current_timer;
 			double scaling_factor;
@@ -24,3 +28,5 @@ class ECGReadout {
             uint32_t heart_rate(void);
 
 };
+
+#endif
