@@ -38,3 +38,4 @@ class ECGReadout {
 			ECGReadout(int, int, int, int, int, int, Adafruit_ILI9341*);
 
 };
+

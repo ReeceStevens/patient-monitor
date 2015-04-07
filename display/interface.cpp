@@ -59,7 +59,7 @@ void ECGReadout::read(){
 	for (int i = buffer_contents; i > 0; i--){
 		tft_interface->drawPixel(coord_x + i, coord_y + databuffer[i], ILI9341_BLACK);
 		databuffer[i] = databuffer[i-1];
-		tft_interface->drawPixel(coord_x + i, coord_y + databuffer[i], ILI9341_WHITE);
+		tft_interface->drawPixel(coord_x + i, coord_y + databuffer[i], ILI9341_GREEN);
 	}
 	tft_interface->drawPixel(coord_x, coord_y + databuffer[0], ILI9341_BLACK);
 	databuffer[0] = (int) input_num;
