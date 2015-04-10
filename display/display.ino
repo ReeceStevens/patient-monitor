@@ -6,6 +6,7 @@
 #include <Wire.h>
 
 #include "interface.h"
+#include "ecg.h"
 
 #define ILI9341_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define CS_TOUCH 8
@@ -40,7 +41,7 @@ Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
 Button alarm_button = Button(260,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 500, &tft);
+ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -192,6 +193,13 @@ void loop(void) {
   // Touch screen interfacing taken from touchpaint.ino example
   // in the ILI9341 examples directory
   ecg.read();
+  int hr = ecg.heart_rate();
+  tft.fillRect(tft.width()-90, 60, 90, 40, ILI9341_BLACK);
+  tft.setCursor(tft.width()-90, 60);
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_MAGENTA);
+  String s_hr = String(hr);
+  tft.println(s_hr);
   // Check if there is touch data
   if (ts.bufferEmpty()){
     return;
