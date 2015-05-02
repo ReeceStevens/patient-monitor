@@ -1,4 +1,5 @@
 #include <Adafruit_ILI9341.h>
+#include <vector>
 
 class ECGReadout {
 	private:
@@ -14,6 +15,12 @@ class ECGReadout {
 			int current_timer;
 			double scaling_factor;
 			int buffer_contents;
+            std::vector<int> fifo;
+            std::vector<int> display_fifo;
+            int fifo_next;
+            int fifo_end;
+            int disp_start; 
+            int disp_end;
 			Adafruit_ILI9341* tft_interface;
 
 			void destroy(void);
@@ -22,6 +29,7 @@ class ECGReadout {
 			ECGReadout(int, int, int, int, int, int, Adafruit_ILI9341*);
 			void draw(void);
 			void read(void);
+            void display_signal(void);
             int heart_rate(void);
             ~ECGReadout(void);
 
