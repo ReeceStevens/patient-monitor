@@ -19,4 +19,3 @@ bool Button::isTapped(int x, int y){
 	}
 	return false;	
 }
-

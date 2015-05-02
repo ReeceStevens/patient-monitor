@@ -49,7 +49,7 @@ ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
  
  //Write labels
 char Title[] = "Texas Engineering World Health";
-char Version[] = "Patient Monitor v1.0";
+char Version[] = "Patient Monitor v2.1";
 char ecgTitle[] = "ECG/HR (bpm)";
 char ecgLabel[] = "ECG";
 char sp02Title[] = "sp02 (%Sat.)";
@@ -62,7 +62,7 @@ char celLabel[] = "Cel";
 char alarmLabel[] = "ALARM";
 char settingsLabel[] = "SETTINGS";
 /*
- * vlabel_setup(int x_coord, int y_coord, char* letter, int color) - create vertical labels
+ * create vertical labels
  */
 void createVLabel(int x_coord, int y_coord, char* label, int textsize, int color){
   tft.setTextSize(textsize);
@@ -75,6 +75,9 @@ void createVLabel(int x_coord, int y_coord, char* label, int textsize, int color
   }
 }
 
+/*
+ * create horizontal labels
+ */
 void createHLabel(int x_coord, int y_coord, char* label,int textsize, int color){
   tft.setTextSize(textsize);
   tft.setTextColor(color);
@@ -124,9 +127,9 @@ void gui_setup(){
  * ECG_setup() - intialize ECG and HR interfaces
  */
 void ECG_setup(){
-  createHLabel(BOXSIZE + 55, 40, ecgTitle, 1, ILI9341_WHITE);
-  createVLabel(0, 56, ecgLabel, 1, ILI9341_MAGENTA);
-  createVLabel(tft.width()-45, 60, hrLabel, 1, ILI9341_MAGENTA);
+  createHLabel(BOXSIZE + 55, 40, ecgTitle, 1, ILI9341_GREEN);
+  createVLabel(0, 56, ecgLabel, 1, ILI9341_GREEN);
+  createVLabel(tft.width()-45, 60, hrLabel, 1, ILI9341_GREEN);
   tft.setCursor(tft.width()-30, 60);
   tft.setTextSize(2);
   tft.println("60");
@@ -136,7 +139,7 @@ void ECG_setup(){
  * sp02_setup() - intialize sp02 and % saturation interfaces
  */
 void sp02_setup(){
-  createHLabel(BOXSIZE + 55, 95, sp02Title, 1, ILI9341_WHITE);
+  createHLabel(BOXSIZE + 55, 95, sp02Title, 1, ILI9341_CYAN);
   createVLabel(0, 111, sp02Label, 1, ILI9341_CYAN);
   createVLabel(tft.width()-50, 112, satLabel, 1, ILI9341_CYAN);
   tft.setCursor(tft.width()-40, 116);
@@ -145,7 +148,7 @@ void sp02_setup(){
 }
 
 void temperature_setup(){
-  createHLabel(BOXSIZE + 55, 150, tempTitle, 1, ILI9341_WHITE);
+  createHLabel(BOXSIZE + 55, 150, tempTitle, 1, ILI9341_GREENYELLOW);
   createVLabel(30, 171, farLabel, 1, ILI9341_GREENYELLOW);
   createVLabel(tft.width()-120, 171, celLabel, 1, ILI9341_GREENYELLOW);
   tft.setCursor(50, 175);
