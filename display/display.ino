@@ -192,14 +192,16 @@ void loop(void) {
   
   // Touch screen interfacing taken from touchpaint.ino example
   // in the ILI9341 examples directory
+  clearScreen(ILI9341_CYAN);
   ecg.read();
-  int hr = ecg.heart_rate();
+  ecg.display_signal();
+  /*int hr = ecg.heart_rate();
   tft.fillRect(tft.width()-90, 60, 90, 40, ILI9341_BLACK);
   tft.setCursor(tft.width()-90, 60);
   tft.setTextSize(2);
   tft.setTextColor(ILI9341_MAGENTA);
   String s_hr = String(hr);
-  tft.println(s_hr);
+  tft.println(s_hr);*/
   // Check if there is touch data
   if (ts.bufferEmpty()){
     return;

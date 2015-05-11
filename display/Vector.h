@@ -1,0 +1,94 @@
+// Vector.h interface description for the Vector abstract data type (ADT)
+
+#ifndef _Vector_h
+#define _Vector_h 1
+
+//#include <assert.h>
+
+template<typename T>
+
+struct Vector {
+private:
+	uint32_t length; // number of elements stored in the vector
+	uint32_t capacity; // size of the array (amount of available storage)
+	T* data; // pointer to the array on the heap (never null)
+
+        void copy(const Vector<T>& that) {
+          T* newdata = new T[that.length];
+          for (uint32_t k = 0; k < that.length; k += 1) {
+             newdata[k] = that.data[k];
+          } 
+          this->data = newdata;
+          this->length = that.length; 
+          this->capacity = this->length;
+        }
+      
+public:
+    // Default constructor just gives us an empty vector.
+    Vector(void) {
+        length = 0;
+        capacity = 2;
+        data = new T[2];
+    }
+	/* initialize and return a vector for my client, the vector will contain
+	sz elements all initialized to the default constructor for that given type */
+	Vector(uint32_t sz) {
+        length = sz;
+        capacity = sz;
+        data = new T[sz];
+        for (uint32_t k = 0; k < length; k += 1) {
+            data[k] = 0;
+        }
+    }
+	~Vector(void) {
+        delete [] data;
+    }
+
+	uint32_t size(void) {
+        return length;
+    }
+
+	T& operator[](uint32_t k) {
+        if (length <= k) {
+          int* p = 0;
+          p = (int*) 1; // Intentionally crash.
+        }
+        //assert(length > k);
+        return data[k]; 
+    }
+
+	int set(uint32_t k, const T& v){
+        //assert(length > k);
+        if (length <= k) {
+          return 0;
+        }
+        data[k] = v;
+        return 1;
+    } 
+    Vector<T>& operator=(const Vector<T>& that) {
+       if (this != &that) {
+           delete [] data;
+           this->copy(that);
+       } return *this;
+    }
+
+	void push_back(const T& x) {
+        // Amortized doubling of vector capacity
+        if (length == capacity) {
+            T* old_data = data;
+            capacity *= 2;
+            T* new_data = new T[capacity];
+            
+		    for (uint32_t k = 0; k < this->length; k += 1) {
+		    	new_data[k] = old_data[k];
+		    }
+            data = new_data;
+            delete [] old_data;
+        } 
+        data[length] = x;
+        length += 1;
+    }
+
+};
+
+#endif /* _Vector_h */
