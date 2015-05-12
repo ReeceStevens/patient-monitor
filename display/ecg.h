@@ -7,6 +7,8 @@ class ECGReadout {
 			int coord_y;
 			int len;
 			int width;
+            int fifo_size;
+            int fifo_multiplier;
 			int pin;
 			int reset_timer;
 			int current_timer;

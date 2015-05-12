@@ -68,6 +68,22 @@ public:
         return data[k]; 
     }
 
+    bool operator!=(const Vector<T>& that) {
+        if (this->length != that.length) {
+            return false;
+        }
+        for (uint32_t k = 0; k < this->length; k +=1 ){
+            if (this->data[k] != that.data[k]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    bool operator==(const Vector<T>& that) {
+        return !(*this != that);
+    }
+
 	int set(uint32_t k, const T& v){
         //assert(length > k);
         if (length <= k) {
@@ -76,11 +92,14 @@ public:
         data[k] = v;
         return 1;
     } 
+
     Vector<T>& operator=(const Vector<T>& that) {
-       if (this != &that) {
-           delete [] data;
-           this->copy(that);
-       } return *this;
+       if (this->data == that.data) {
+           return *this;
+        }
+        delete [] this->data;
+        this->copy(that);
+        return *this;
     }
 
 	void push_back(const T& x) {

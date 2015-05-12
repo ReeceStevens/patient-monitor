@@ -170,6 +170,18 @@ void settings_setup(){
 void clearScreen(int color){
     tft.fillRect(BOXSIZE,0,tft.width()-BOXSIZE,tft.height(),color);
 }
+/*
+void TIMER1_OVF_vect() {
+    ecg.read();
+    PIT_TFLG1 |= 0x1; // clear interrupt flag
+} */
+
+void interrupt_setup() {
+    /*PIT_MCR = 0x00;
+    PIT_LDVAL1 = 0x00001300; // Setup timer 1 for 20 cycles
+    PIT_TCTRL1 = 0x2; // enable Timer 1 interrupts
+    PIT_TCTRL1 |= 0x1; // start timer */
+}
 
 void setup(void){
   gui_setup();
@@ -178,8 +190,18 @@ void setup(void){
   //sp02_setup();
   //temperature_setup();
   //settings_setup();
+  //interrupt_setup();
+  //IntervalTimer myTimer;
+  //myTimer.begin(isr, 0.00001);
+  //myTimer.priority(1);
 }
 
+void isr(void) {
+    ecg.read();
+}
+
+int display_count = 0;
+int hr_counter = 0;
 void loop(void) {
   //timeout ++;
   // After timeout, wipe message from screen
@@ -193,15 +215,25 @@ void loop(void) {
   // Touch screen interfacing taken from touchpaint.ino example
   // in the ILI9341 examples directory
   //clearScreen(ILI9341_CYAN);
-  ecg.read();
-  ecg.display_signal();
-  /*int hr = ecg.heart_rate();
-  tft.fillRect(tft.width()-90, 60, 90, 40, ILI9341_BLACK);
-  tft.setCursor(tft.width()-90, 60);
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_MAGENTA);
-  String s_hr = String(hr);
-  tft.println(s_hr);*/
+
+  /* ecg.read();
+  if (display_count >= 20) {
+    ecg.display_signal();
+    display_count = 0;
+    if (hr_counter >= 10) {
+    int hr = ecg.heart_rate();
+    tft.fillRect(tft.width()-200, 60, 90, 40, ILI9341_BLACK);
+    tft.setCursor(tft.width()-200, 60);
+    tft.setTextSize(2);
+    tft.setTextColor(ILI9341_MAGENTA);
+    String s_hr = String(hr);
+    tft.println(s_hr);
+    hr_counter = 0;
+    } else { hr_counter += 1; }
+  }
+  else {
+    display_count += 1;
+  } */
   // Check if there is touch data
    if (ts.bufferEmpty()){
     return;
