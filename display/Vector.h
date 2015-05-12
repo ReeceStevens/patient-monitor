@@ -30,6 +30,17 @@ public:
         capacity = 2;
         data = new T[2];
     }
+
+    // Copy constructor
+    Vector(const Vector<T>& that) {
+          T* newdata = new T[that.length];
+          for (uint32_t k = 0; k < that.length; k += 1) {
+             newdata[k] = that.data[k];
+          } 
+          this->data = newdata;
+          this->length = that.length; 
+          this->capacity = this->length;
+    }
 	/* initialize and return a vector for my client, the vector will contain
 	sz elements all initialized to the default constructor for that given type */
 	Vector(uint32_t sz) {

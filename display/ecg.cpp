@@ -33,13 +33,10 @@ ECGReadout::ECGReadout(int coord_x, int coord_y, int width, int len, int pin, in
     fifo = Vector<double> ((uint32_t) width);
     //this->fifo = fifo;
     display_fifo = Vector<double> (width);
-    //this->display_fifo = display_fifo;
-    //fifo_next = width-1;
     fifo_next = 0;
-
     fifo_end = 1;
-    disp_start = (fifo_next + 1) % width;
-    disp_end = (fifo_next - 1) % width;
+    disp_start = fifo_next;
+    disp_end = fifo_end;
 	current_timer = 0;
 	buffer_contents = 0;
 	scaling_factor = len / 500;
@@ -55,7 +52,11 @@ void ECGReadout::draw(){
  *
  */
 void ECGReadout::read(){
+    if (buffer_contents < width) {
+        buffer_contents += 1;
+    }
     
+	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_BLUE);
 	double input_num = (double) analogRead(pin);
 	double adjusted_num =  input_num * len;
     adjusted_num = (adjusted_num / 1023);
@@ -66,6 +67,7 @@ void ECGReadout::read(){
     // Move our trackers
     fifo_next = fifo_end;
     fifo_end = (fifo_end + 1) % width;
+	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_CYAN);
 }
 
 /*
@@ -74,52 +76,55 @@ void ECGReadout::read(){
  */
 void ECGReadout::display_signal(){
     cli(); // Disable all interrupts
-	tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_GREEN);
-    int new_start = fifo_next;
-    int new_end = fifo_end;
+	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_GREEN);
+    int newest = fifo_next;
+    int oldest = fifo_end;
     int disp_buffer_size = buffer_contents;
     // Make our copy of the data so we can draw while the analog pin
     // keeps sampling and updating the buffer.
-    Vector<double> new_display_data = fifo;
+    Vector<double> new_display_data(fifo);
     sei(); // Re-enable all interrupts
-	tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_WHITE);
+	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_WHITE);
     int i = 0;
     int line_thresh = 40;
     // Draw over old data in black and new data in white
-    while ((((i + new_end) % width) != new_start) ){
+    while ((((i + oldest) % width) != newest) && (i < buffer_contents) ){
         int k = (i + disp_end) % width; // Numerical position in old fifo vector (i is pixel location on screen)
-		int prev;
-		if (i == 0) { prev = k; }
-        prev = (i + disp_end - 1) % width; // Position of data point to be erased on display  
-        int new_k = (i + new_end) % width; // Numerical position in new fifo vector (i is pixel location on screen)
-		int new_prev;
-		if (i == 0) { new_prev = new_k; }
-        new_prev = (i + new_end - 1) % width; // Position of data point to be drawn on display  
+        int prev = (i + disp_start) % width; // Position of data point to be erased on display  
+        int new_k = (i + oldest) % width; // Numerical position in new fifo vector (i is pixel location on screen)
+        int new_prev = (i + newest) % width; // Position of data point to be drawn on display  
         /********* ERASING *********/ 
         if ((display_fifo[k] - display_fifo[prev]) > line_thresh){
-            tft_interface->drawFastVLine(coord_x + i, (coord_y + len - display_fifo[k]), (display_fifo[k] - display_fifo[prev]), ILI9341_BLACK);
+            //tft_interface->drawFastVLine(coord_x + i, (coord_y + len - display_fifo[k]), (display_fifo[k] - display_fifo[prev]), ILI9341_BLACK);
+            tft_interface->drawFastVLine(coord_x + i, (coord_y + display_fifo[k]), (display_fifo[k] - display_fifo[prev]), ILI9341_BLACK);
         }
         else if ((display_fifo[prev] - display_fifo[k]) > line_thresh){
-            tft_interface->drawFastVLine(coord_x + i, (coord_y + len - display_fifo[prev]), (display_fifo[prev] - display_fifo[k]), ILI9341_BLACK);
+            //tft_interface->drawFastVLine(coord_x + i, (coord_y + len - display_fifo[prev]), (display_fifo[prev] - display_fifo[k]), ILI9341_BLACK);
+            tft_interface->drawFastVLine(coord_x + i, (coord_y + display_fifo[prev]), (display_fifo[prev] - display_fifo[k]), ILI9341_BLACK);
         } else { 
             // If not necessary, just color in the pixel
-		    tft_interface->drawPixel(coord_x + i, (coord_y + len - display_fifo[k]), ILI9341_BLACK);
+		    //tft_interface->drawPixel(coord_x + i, (coord_y + len - display_fifo[k]), ILI9341_BLACK);
+		    tft_interface->drawPixel(coord_x + i, (coord_y + display_fifo[k]), ILI9341_BLACK);
         } 
         /********* DRAWING *********/ 
         if ((new_display_data[new_k] - new_display_data[new_prev]) > line_thresh){
-            tft_interface->drawFastVLine(coord_x + i, (coord_y + len - new_display_data[new_k]), (new_display_data[new_k] - new_display_data[new_prev]), ILI9341_WHITE);
+            //tft_interface->drawFastVLine(coord_x + i, (coord_y + len - new_display_data[new_k]), (new_display_data[new_k] - new_display_data[new_prev]), ILI9341_WHITE);
+            tft_interface->drawFastVLine(coord_x + i, (coord_y + new_display_data[new_k]), (new_display_data[new_k] - new_display_data[new_prev]), ILI9341_WHITE);
         }
         if ((new_display_data[new_prev] - new_display_data[new_k]) > line_thresh){
-            tft_interface->drawFastVLine(coord_x + i, (coord_y + len - new_display_data[new_prev]), (new_display_data[new_prev] - new_display_data[new_k]), ILI9341_WHITE);
+            //tft_interface->drawFastVLine(coord_x + i, (coord_y + len - new_display_data[new_prev]), (new_display_data[new_prev] - new_display_data[new_k]), ILI9341_WHITE);
+            tft_interface->drawFastVLine(coord_x + i, (coord_y + new_display_data[new_prev]), (new_display_data[new_prev] - new_display_data[new_k]), ILI9341_WHITE);
         }
-		tft_interface->drawPixel(coord_x + i, (coord_y + len - new_display_data[new_k]), ILI9341_WHITE);
+		//tft_interface->drawPixel(coord_x + i, (coord_y + len - new_display_data[new_k]), ILI9341_WHITE);
+		tft_interface->drawPixel(coord_x + i, (coord_y + new_display_data[new_k]), ILI9341_WHITE);
 
         i += 1;
     }
     // Store our new display information for next time
     display_fifo = new_display_data;
-    disp_start = new_start;
-    disp_end = new_end;
+    disp_start = newest;
+    disp_end = oldest;
+	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_WHITE);
 }
 
 /*

@@ -173,11 +173,11 @@ void clearScreen(int color){
 
 void setup(void){
   gui_setup();
-  product_title();  
+  //product_title();  
   ECG_setup();
-  sp02_setup();
-  temperature_setup();
-  settings_setup();
+  //sp02_setup();
+  //temperature_setup();
+  //settings_setup();
 }
 
 void loop(void) {
@@ -192,7 +192,7 @@ void loop(void) {
   
   // Touch screen interfacing taken from touchpaint.ino example
   // in the ILI9341 examples directory
-  clearScreen(ILI9341_CYAN);
+  //clearScreen(ILI9341_CYAN);
   ecg.read();
   ecg.display_signal();
   /*int hr = ecg.heart_rate();
@@ -203,7 +203,7 @@ void loop(void) {
   String s_hr = String(hr);
   tft.println(s_hr);*/
   // Check if there is touch data
-  if (ts.bufferEmpty()){
+   if (ts.bufferEmpty()){
     return;
   }
   // Retrieve the touch point
