@@ -14,7 +14,7 @@ class ECGReadout {
 			int current_timer;
 			double scaling_factor;
 			int buffer_contents;
-            Vector<double> fifo;
+            volatile Vector<double> fifo;
             Vector<double> display_fifo;
             uint32_t fifo_next;
             int fifo_end;

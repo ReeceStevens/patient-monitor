@@ -22,7 +22,18 @@ private:
           this->length = that.length; 
           this->capacity = this->length;
         }
-      
+
+
+        void copy(const Vector<T>& that) volatile {
+          T* newdata = new T[that.length];
+          for (uint32_t k = 0; k < that.length; k += 1) {
+             newdata[k] = that.data[k];
+          } 
+          this->data = newdata;
+          this->length = that.length; 
+          this->capacity = this->length;
+        }
+
 public:
     // Default constructor just gives us an empty vector.
     Vector(void) {
@@ -33,6 +44,17 @@ public:
 
     // Copy constructor
     Vector(const Vector<T>& that) {
+          T* newdata = new T[that.length];
+          for (uint32_t k = 0; k < that.length; k += 1) {
+             newdata[k] = that.data[k];
+          } 
+          this->data = newdata;
+          this->length = that.length; 
+          this->capacity = this->length;
+    }
+
+    // Copy constructor
+    Vector(const volatile Vector<T>& that) {
           T* newdata = new T[that.length];
           for (uint32_t k = 0; k < that.length; k += 1) {
              newdata[k] = that.data[k];
@@ -91,9 +113,36 @@ public:
         }
         data[k] = v;
         return 1;
+    }
+
+	int set(uint32_t k, const T& v) volatile {
+        //assert(length > k);
+        if (length <= k) {
+          return 0;
+        }
+        data[k] = v;
+        return 1;
     } 
 
+    Vector<T>& operator=(volatile Vector<T>& that) volatile {
+       if (this->data == that.data) {
+           return *this;
+        }
+        delete [] this->data;
+        this->copy(that);
+        return *this;
+    }
+
     Vector<T>& operator=(const Vector<T>& that) {
+       if (this->data == that.data) {
+           return *this;
+        }
+        delete [] this->data;
+        this->copy(that);
+        return *this;
+    }
+
+    volatile Vector<T>& operator=(const Vector<T>& that) volatile {
        if (this->data == that.data) {
            return *this;
         }
