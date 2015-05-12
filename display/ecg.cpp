@@ -95,7 +95,7 @@ void ECGReadout::display_signal(){
     }
 	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_WHITE);
     int i = 0;
-    int line_thresh = 20;
+    int line_thresh = 30;
     // Draw over old data in black and new data in white
     while ((((i + oldest + 1) % width) != newest)){
         int k = (i + disp_end) % width; // Numerical position in old fifo vector (i is pixel location on screen)

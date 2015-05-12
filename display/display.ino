@@ -170,30 +170,31 @@ void settings_setup(){
 void clearScreen(int color){
     tft.fillRect(BOXSIZE,0,tft.width()-BOXSIZE,tft.height(),color);
 }
+
 /*
 void TIMER1_OVF_vect() {
     ecg.read();
     PIT_TFLG1 |= 0x1; // clear interrupt flag
 } */
 
-void interrupt_setup() {
-    /*PIT_MCR = 0x00;
+/*void interrupt_setup() {
+    PIT_MCR = 0x00;
     PIT_LDVAL1 = 0x00001300; // Setup timer 1 for 20 cycles
     PIT_TCTRL1 = 0x2; // enable Timer 1 interrupts
-    PIT_TCTRL1 |= 0x1; // start timer */
-}
+    PIT_TCTRL1 |= 0x1; // start timer
+} */
 
 void setup(void){
   gui_setup();
-  //product_title();  
+  product_title();  
   ECG_setup();
-  //sp02_setup();
-  //temperature_setup();
-  //settings_setup();
-  //interrupt_setup();
+  sp02_setup();
+  temperature_setup();
+  settings_setup();
+  ecg.read();
   //IntervalTimer myTimer;
   //myTimer.begin(isr, 0.00001);
-  //myTimer.priority(1);
+  //myTimer.priority(128);
 }
 
 void isr(void) {
@@ -203,21 +204,8 @@ void isr(void) {
 int display_count = 0;
 int hr_counter = 0;
 void loop(void) {
-  //timeout ++;
-  // After timeout, wipe message from screen
-  /*
-  if (timeout > 50000) {
-     clearScreen(ILI9341_BLACK);
-	 product_title();
-     timeout = 0;
-  } */
-  
-  // Touch screen interfacing taken from touchpaint.ino example
-  // in the ILI9341 examples directory
-  //clearScreen(ILI9341_CYAN);
-
-  /* ecg.read();
-  if (display_count >= 20) {
+  ecg.read();
+  if (display_count >= 30) {
     ecg.display_signal();
     display_count = 0;
     if (hr_counter >= 10) {
@@ -233,7 +221,7 @@ void loop(void) {
   }
   else {
     display_count += 1;
-  } */
+  } 
   // Check if there is touch data
    if (ts.bufferEmpty()){
     return;
@@ -249,33 +237,14 @@ void loop(void) {
   int temp = p.y;
   p.y = p.x;
   p.x = temp;
-  
-			// Debugging the analog read
-            tft.setCursor((tft.width()/2) -50, tft.height()/2);
-     		tft.setTextSize(2);
-     		tft.setTextColor(ILI9341_RED);
-			int num = analogRead(15);
-			String readout = String(num);
-			clearScreen(ILI9341_BLACK);
-     		tft.println(readout); 
-  // Do stuff with the coordinates of the touch
-  /* 
-  if (temp_button.isTapped(p.x,p.y)){
-        if(!temp_button.lastTapped){
-			// Debugging the analog read
-            tft.setCursor((tft.width()/2) -50, tft.height()/2);
-     		tft.setTextSize(2);
-     		tft.setTextColor(ILI9341_RED);
-			int num = analogRead(15);
-			String readout = String(num);
-			clearScreen(ILI9341_BLACK);
-     		tft.println(readout); 
-        }
-  } else {
-    temp_button.lastTapped = false;
-  }
-*/
-  
 
+  // Debugging the analog read
+  tft.setCursor((tft.width()/2) -50, tft.height()/2);
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_RED);
+  int num = analogRead(15);
+  String readout = String(num);
+  clearScreen(ILI9341_BLACK);
+  tft.println(readout); 
 }
   
