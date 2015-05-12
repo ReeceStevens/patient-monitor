@@ -184,6 +184,8 @@ void TIMER1_OVF_vect() {
     PIT_TCTRL1 |= 0x1; // start timer
 } */
 
+IntervalTimer myTimer;
+
 void setup(void){
   gui_setup();
   product_title();  
@@ -192,36 +194,38 @@ void setup(void){
   temperature_setup();
   settings_setup();
   ecg.read();
-  //IntervalTimer myTimer;
-  //myTimer.begin(isr, 0.00001);
-  //myTimer.priority(128);
+  myTimer.begin(isr, 150);
+  myTimer.priority(128);
 }
 
 void isr(void) {
+	//clearScreen(ILI9341_BLUE);
     ecg.read();
+	return;
 }
 
 int display_count = 0;
 int hr_counter = 0;
 void loop(void) {
-  ecg.read();
-  if (display_count >= 30) {
+  //ecg.read();
+  if (display_count >= 10) {
     ecg.display_signal();
     display_count = 0;
     if (hr_counter >= 10) {
-    int hr = ecg.heart_rate();
-    tft.fillRect(tft.width()-200, 60, 90, 40, ILI9341_BLACK);
-    tft.setCursor(tft.width()-200, 60);
-    tft.setTextSize(2);
-    tft.setTextColor(ILI9341_MAGENTA);
-    String s_hr = String(hr);
-    tft.println(s_hr);
-    hr_counter = 0;
+    	int hr = ecg.heart_rate();
+    	String s_hr = String(hr);
+    	hr_counter = 0;
+		tft.fillRect(tft.width()-45, 60, 45, 45, ILI9341_BLACK);
+  		tft.setCursor(tft.width()-45, 60);
+		tft.setTextColor(ILI9341_GREENYELLOW);
+  		tft.setTextSize(2);
+  		tft.println(s_hr);
     } else { hr_counter += 1; }
   }
   else {
     display_count += 1;
   } 
+
   // Check if there is touch data
    if (ts.bufferEmpty()){
     return;

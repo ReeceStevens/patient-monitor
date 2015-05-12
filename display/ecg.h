@@ -15,9 +15,10 @@ class ECGReadout {
 			double scaling_factor;
 			int buffer_contents;
             volatile Vector<double> fifo;
+			volatile Vector<double> averager_queue;
             Vector<double> display_fifo;
-            uint32_t fifo_next;
-            int fifo_end;
+            volatile uint32_t fifo_next;
+            volatile int fifo_end;
             int disp_start; 
             int disp_end;
 			Adafruit_ILI9341* tft_interface;

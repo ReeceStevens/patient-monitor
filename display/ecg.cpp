@@ -27,12 +27,14 @@
 // To determine heart rate, we need to know how fast 
 // our system is sampling. 
 
+volatile int avg_count = 0;
 // Constructor
 ECGReadout::ECGReadout(int coord_x, int coord_y, int width, int len, int pin, int reset_timer, Adafruit_ILI9341* tft):coord_x(coord_x), coord_y(coord_y), len(len), width(width), pin(pin),reset_timer(reset_timer), tft_interface(tft) {
 	// Allocate space for one integer per pixel length-wise	  a
     fifo_multiplier = 9;
     fifo_size = width * fifo_multiplier; 
     fifo = Vector<double> (fifo_size);
+	averager_queue = Vector<double>(5);
     //this->fifo = fifo;
     display_fifo = Vector<double> (width);
     fifo_next = 0;
@@ -55,16 +57,27 @@ void ECGReadout::draw(){
  */
 void ECGReadout::read(){
 	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_BLUE);
-	double input_num = (double) analogRead(pin);
-	double adjusted_num =  input_num * len;
-    adjusted_num = (adjusted_num / 1023);
-    // Put number in next location in fifo
-    int result = fifo.set(fifo_next, adjusted_num);
-    if (!result) { tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_RED); }
+	if (avg_count < 5) {
+		double input_num = (double) analogRead(pin);
+		double adjusted_num =  input_num * len;
+    	adjusted_num = (adjusted_num / 1023);
+    	// Put number in next location in fifo
+		averager_queue[avg_count] = adjusted_num;
+		avg_count += 1;
+    	//int result = fifo.set(fifo_next, adjusted_num);
+	} else {
+		avg_count = 0;
+		double avg;
+		for (uint32_t k = 0; k < 5; k += 1) {
+			avg += averager_queue[k];
+		}
+		avg /= 5;
+    	int result = fifo.set(fifo_next, avg);
+    	fifo_next = fifo_end;
+    	fifo_end = (fifo_end + 1) % fifo_size;
+	}
 
     // Move our trackers
-    fifo_next = fifo_end;
-    fifo_end = (fifo_end + 1) % fifo_size;
 	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_CYAN);
 }
 
@@ -76,13 +89,14 @@ void ECGReadout::display_signal(){
     cli(); // Disable all interrupts
 	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_GREEN);
     // Trackers will always round down. Not ideal, but lets us shrink fifo size without much fuss.
+	//nointerrupts();
     int newest = fifo_next/fifo_multiplier;
     int oldest = fifo_end/fifo_multiplier;
     // Make our copy of the data so we can draw while the analog pin
     // keeps sampling and updating the buffer.
     Vector<double> new_input_data(fifo);
     sei(); // Re-enable all interrupts
-
+	//interrupts();
     Vector<double> new_display_data(width);
     for (uint32_t i = 0; i < fifo_size; i += fifo_multiplier) {
         double maximum = 0;
@@ -95,7 +109,7 @@ void ECGReadout::display_signal(){
     }
 	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_WHITE);
     int i = 0;
-    int line_thresh = 30;
+    int line_thresh = 10;
     // Draw over old data in black and new data in white
     while ((((i + oldest + 1) % width) != newest)){
         int k = (i + disp_end) % width; // Numerical position in old fifo vector (i is pixel location on screen)
@@ -145,9 +159,9 @@ void ECGReadout::display_signal(){
  * Measure interval of "silence" between waves?
  */
 int ECGReadout::heart_rate() {
-    double sampling_period = 0.013333; // time between samples (in seconds)
+    double sampling_period = 0.00827; // time between samples (in seconds)
     int threshold = 50;
-	int wait = 10;
+	int wait = 15;
 	int start = -1;
     int mid = -1;
     int finish = -1;
@@ -160,7 +174,7 @@ int ECGReadout::heart_rate() {
 		}
 		// Delay after we find the peak 
 		// so we don't detect another sample on the same peak
-		if (wait < 7) {
+		if (wait < 15) {
 			wait += 1;
 			continue;
 		}
@@ -172,7 +186,7 @@ int ECGReadout::heart_rate() {
 			break;
 		}
 
-		if (wait < 7) {
+		if (wait < 15) {
 			wait += 1;
 			continue;
 		}

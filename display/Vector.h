@@ -90,6 +90,15 @@ public:
         return data[k]; 
     }
 
+	T& operator[](uint32_t k) volatile {
+        if (length <= k) {
+          int* p = 0;
+          p = (int*) 1; // Intentionally crash.
+        }
+        //assert(length > k);
+        return data[k]; 
+    }
+
     bool operator!=(const Vector<T>& that) {
         if (this->length != that.length) {
             return false;
