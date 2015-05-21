@@ -9,6 +9,7 @@ class ECGReadout {
 			int width;
             int fifo_size;
             int fifo_multiplier;
+			int pin_detector;
 			int pin_IR;
 			int pin_R;
 			int reset_timer;
@@ -16,8 +17,7 @@ class ECGReadout {
 			double scaling_factor;
 			int buffer_contents;
             volatile Vector<double> fifo;
-            volatile Vector<double> queue_R;
-			volatile Vector<double> queue_IR;
+            volatile Vector<double> queue;
             Vector<double> display_fifo;
             volatile uint32_t fifo_next;
             volatile int fifo_end;

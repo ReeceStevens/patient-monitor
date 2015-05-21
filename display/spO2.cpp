@@ -15,7 +15,7 @@ volatile double min_IR = 0;
 volatile double max_R = 0;
 volatile double min_R = 0;
 // Constructor
-spO2Readout::spO2Readout(int coord_x, int coord_y, int width, int len, int pin, int reset_timer, Adafruit_ILI9341* tft):coord_x(coord_x), coord_y(coord_y), len(len), width(width), pin(pin),reset_timer(reset_timer), tft_interface(tft) {
+spO2Readout::spO2Readout(int coord_x, int coord_y, int width, int len, int pin, int reset_timer, Adafruit_ILI9341* tft):coord_x(coord_x), coord_y(coord_y), len(len), width(width), pin_detector(pin_detector), pin_IR(pin_IR), pin_R(pin_R), reset_timer(reset_timer), tft_interface(tft) {
     // Allocate space for one integer per pixel length-wise   a
     fifo_multiplier = 9;
     fifo_size = width * fifo_multiplier; 
@@ -35,7 +35,13 @@ spO2Readout::spO2Readout(int coord_x, int coord_y, int width, int len, int pin, 
 
 void spO2Readout::draw(){
     tft_interface->drawRect(coord_x,coord_y,len,width, ILI9341_BLACK);
+	// Turn on LEDs for SpO2 probe
+	pinmode(pin_IR, OUTPUT);
+	pinmode(pin_R, OUTPUT);
+	digitalWrite(pin_IR, HIGH);
+	digitalWrite(pin_R, HIGH);
 }
+
 void checkMax(int check_IR,int check_R){
     if(max_IR == 0 && max_R == 0){ // only use if we dont know max and min values
         max_IR = check_IR;
@@ -58,38 +64,31 @@ void checkMax(int check_IR,int check_R){
         min_R = check_R;
     }
 }
+
 double calculateSPO2(double vmax_red, double vmax_ir, double vmin_red, double vmin_ir){
     double R = (vmax_red - vmin_red)*vmin_ir;
     double spo2 = (10.0002 * (R*R*R)) - (52.887*(R*R)) + 98.282   // will probably need to adjust these numbers
     return spo2;
 }
+
 void spO2Readout::read(){
     //tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_BLUE);
     if (avg_count < 5) {
-        double input_IR = (double) analogRead(pin_IR);
-        double input_R = (double) analogRead(pin_R);
-
-        double adjusted_IR = (input_IR / 1023);
-        double adjusted_R = (input_R /1023);
+        double input = (double) analogRead(pin_detector);
+        double adjusted = (input /1023);
         // Put number in next location in fifo
-        queue_IR[avg_count] = adjusted_IR;
-        queue_R[avg_count] = adjusted_R;
+        averager_queue[avg_count] = adjusted;
         avg_count += 1;
         //int result = fifo.set(fifo_next, adjusted_num);
     } else {
         avg_count = 0;
-        double avg_IR;
-        double avg_R;
+        double avg;
         for (uint32_t k = 0; k < 5; k += 1) {
-            avg_IR += queue_IR[k];
-            avg_R += queue_R[k];
+            avg += averager_queue[k];
         }
-        avg_IR /= 5;
-        avg_R /= 5;
-        checkMax(avg_IR,avg_R);
-        double value = calculateSPO2(max_R,max_IR,min_R,min_IR);
+        avg /= 5;
 
-        int result = fifo.set(fifo_next, value); //okay tbh idk why we need int result but i just copied your (reece's) code
+        int result = fifo.set(fifo_next, avg);
         fifo_next = fifo_end;
         fifo_end = (fifo_end + 1) % fifo_size;
     }
