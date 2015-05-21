@@ -6,6 +6,7 @@
 #include <Wire.h>
 
 #include "interface.h"
+#include "ecg.h"
 
 #define ILI9341_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define CS_TOUCH 8
@@ -45,7 +46,7 @@ Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tf
 
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 500, &tft);
+ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -220,21 +221,64 @@ void SettingsScreenInit(void){
   tft.drawFastVLine(BOXSIZE*3, 200, 40, ILI9341_BLACK);
 }
 
+/*
+void TIMER1_OVF_vect() {
+    ecg.read();
+    PIT_TFLG1 |= 0x1; // clear interrupt flag
+} */
+
+/*void interrupt_setup() {
+    PIT_MCR = 0x00;
+    PIT_LDVAL1 = 0x00001300; // Setup timer 1 for 20 cycles
+    PIT_TCTRL1 = 0x2; // enable Timer 1 interrupts
+    PIT_TCTRL1 |= 0x1; // start timer
+} */
+
+IntervalTimer myTimer;
+
 void setup(void){
   gui_setup();
   product_title();  
   ECG_setup();
   sp02_setup();
-  //temperature_setup();
   alarm_button_setup();
+  temperature_setup();
+  settings_setup();
+  ecg.read();
+  myTimer.begin(isr, 150);
+  myTimer.priority(128);
 }
 
+void isr(void) {
+	//clearScreen(ILI9341_BLUE);
+    ecg.read();
+	return;
+}
+
+int display_count = 0;
+int hr_counter = 0;
 void loop(void) {
   /*main screen*/
   if (currentMode == 0){
     MainScreenInit();
     while (currentMode == 0){
-      ecg.read();
+      if (display_count >= 10) {
+         ecg.display_signal();
+        display_count = 0;
+        if (hr_counter >= 10) {
+          int hr = ecg.heart_rate();
+    	  String s_hr = String(hr);
+    	  hr_counter = 0;
+	  tft.fillRect(tft.width()-45, 60, 45, 45, ILI9341_BLACK);
+  	  tft.setCursor(tft.width()-45, 60);
+	  tft.setTextColor(ILI9341_GREENYELLOW);
+  	  tft.setTextSize(2);
+  	  tft.println(s_hr);
+      } else { hr_counter += 1; }
+      }
+      else {
+        display_count += 1;
+      }
       // Retrieve the touch point
       TS_Point p = ts.getPoint();
       // Scale from 0-4000 to tft.width() using calibration numbers
@@ -263,6 +307,6 @@ void loop(void) {
         currentMode = 0;
       }
     }
-  }
+  }  
 }
   
