@@ -16,12 +16,11 @@ volatile double max_R = 0;
 volatile double min_R = 0;
 // Constructor
 spO2Readout::spO2Readout(int coord_x, int coord_y, int width, int len, int pin, int reset_timer, Adafruit_ILI9341* tft):coord_x(coord_x), coord_y(coord_y), len(len), width(width), pin_detector(pin_detector), pin_IR(pin_IR), pin_R(pin_R), reset_timer(reset_timer), tft_interface(tft) {
-    // Allocate space for one integer per pixel length-wise   a
+    // Allocate space for one integer per pixel length-wise
     fifo_multiplier = 9;
     fifo_size = width * fifo_multiplier; 
     fifo = Vector<double> (fifo_size);
     averager_queue = Vector<double>(5);
-    //this->fifo = fifo;
     display_fifo = Vector<double> (width);
     fifo_next = 0;
     fifo_end = 1;
