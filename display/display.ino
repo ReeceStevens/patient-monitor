@@ -279,6 +279,9 @@ void loop(void) {
   		else {
     		display_count += 1;
   		} 
+	  if (ts.bufferEmpty()) {
+		continue;
+	  }
       // Retrieve the touch point
       TS_Point p = ts.getPoint();
       // Scale from 0-4000 to tft.width() using calibration numbers
@@ -296,6 +299,9 @@ void loop(void) {
   if (currentMode == 1){
     SettingsScreenInit();
     while (currentMode == 1){
+	  if (ts.bufferEmpty()) {
+		continue;
+	  }
       TS_Point p = ts.getPoint();
       // Scale from 0-4000 to tft.width() using calibration numbers
       p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
