@@ -39,6 +39,11 @@ Button hr_button = Button(0,0,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
 Button sp_button = Button(0,BOXSIZE,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
 Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
 Button alarm_button = Button(260,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
+Button confirm_button = Button(0,200,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
+Button default_button = Button(BOXSIZE,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
+Button mode_button = Button(BOXSIZE*2,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
+Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
+
 
 // Create ECG trace
 ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
@@ -61,6 +66,11 @@ char farLabel[] = "Far";
 char celLabel[] = "Cel";
 char alarmLabel[] = "ALARM";
 char settingsLabel[] = "SETTINGS";
+char confirmLabel[] = "CONFIRM";
+char defaultLabel[] = "DEFAULT";
+char modeLabel[] = "MODE";
+char cancelLabel[] = "CANCEL";
+
 /*
  * create vertical labels
  */
@@ -120,7 +130,6 @@ void gui_setup(){
 	tft.fillScreen(ILI9341_BLACK);
 	tft.setRotation(1);
 	ecg.draw();
-	//draw_submenu();
 }
 
 /*
@@ -139,10 +148,10 @@ void ECG_setup(){
  * sp02_setup() - intialize sp02 and % saturation interfaces
  */
 void sp02_setup(){
-  createHLabel(BOXSIZE + 55, 95, sp02Title, 1, ILI9341_CYAN);
-  createVLabel(0, 111, sp02Label, 1, ILI9341_CYAN);
-  createVLabel(tft.width()-50, 112, satLabel, 1, ILI9341_CYAN);
-  tft.setCursor(tft.width()-40, 116);
+  createHLabel(BOXSIZE + 55, 125, sp02Title, 1, ILI9341_CYAN);
+  createVLabel(0, 141, sp02Label, 1, ILI9341_CYAN);
+  createVLabel(tft.width()-50, 142, satLabel, 1, ILI9341_CYAN);
+  tft.setCursor(tft.width()-40, 146);
   tft.setTextSize(2);
   tft.println("97%"); 
 }
@@ -159,16 +168,57 @@ void temperature_setup(){
   tft.println("37");
 }
 
-void settings_setup(){
-    alarm_button.draw();
-    createHLabel(265, 210, alarmLabel, 1, ILI9341_BLACK);
-    createHLabel(265, 220, settingsLabel, 1, ILI9341_BLACK);
+void alarm_button_setup(void){
+  alarm_button.draw();
+  createHLabel(265, 210, alarmLabel, 1, ILI9341_BLACK);
+  createHLabel(265, 220, settingsLabel, 1, ILI9341_BLACK);
 }
+
+void confirm_button_setup(void){
+  confirm_button.draw();
+  createHLabel(9, 217, confirmLabel, 1, ILI9341_BLACK);
+}
+
+void default_button_setup(void){
+  default_button.draw();
+  createHLabel(BOXSIZE + 10, 217, defaultLabel, 1, ILI9341_BLACK);
+}
+
+void mode_button_setup(void){
+  mode_button.draw();
+  createHLabel(BOXSIZE*2 + 20, 217, modeLabel, 1, ILI9341_BLACK);
+}
+
+void cancel_button_setup(void){
+  cancel_button.draw();
+  createHLabel(BOXSIZE*3 + 14, 217, cancelLabel, 1, ILI9341_BLACK);
+}
+
 /*
  * clearScreen(int color) - clear screen with specified color
  */
 void clearScreen(int color){
-    tft.fillRect(BOXSIZE,0,tft.width()-BOXSIZE,tft.height(),color);
+    tft.fillRect(0,0,tft.width(),tft.height(),color);
+}
+
+void MainScreenInit(void){
+  clearScreen(ILI9341_BLACK);
+  product_title();  
+  ECG_setup();
+  sp02_setup();
+  //temperature_setup();
+  alarm_button_setup();
+}
+
+void SettingsScreenInit(void){
+  clearScreen(ILI9341_BLACK);
+  confirm_button_setup();
+  default_button_setup();
+  mode_button_setup();
+  cancel_button_setup();
+  tft.drawFastVLine(BOXSIZE, 200, 40, ILI9341_BLACK);
+  tft.drawFastVLine(BOXSIZE*2, 200, 40, ILI9341_BLACK);
+  tft.drawFastVLine(BOXSIZE*3, 200, 40, ILI9341_BLACK);
 }
 
 /*
@@ -192,7 +242,8 @@ void setup(void){
   ECG_setup();
   sp02_setup();
   temperature_setup();
-  settings_setup();
+  //settings_setup();
+  alarm_button_setup();
   ecg.read();
   myTimer.begin(isr, 150);
   myTimer.priority(128);
@@ -207,48 +258,55 @@ void isr(void) {
 int display_count = 0;
 int hr_counter = 0;
 void loop(void) {
-  //ecg.read();
-  if (display_count >= 10) {
-    ecg.display_signal();
-    display_count = 0;
-    if (hr_counter >= 10) {
-    	int hr = ecg.heart_rate();
-    	String s_hr = String(hr);
-    	hr_counter = 0;
-		tft.fillRect(tft.width()-45, 60, 45, 45, ILI9341_BLACK);
-  		tft.setCursor(tft.width()-45, 60);
-		tft.setTextColor(ILI9341_GREENYELLOW);
-  		tft.setTextSize(2);
-  		tft.println(s_hr);
-    } else { hr_counter += 1; }
+  /*main screen*/
+  if (currentMode == 0){
+    MainScreenInit();
+    while (currentMode == 0){
+  		if (display_count >= 10) {
+    		ecg.display_signal();
+    		display_count = 0;
+    		if (hr_counter >= 10) {
+  	  			int hr = ecg.heart_rate();
+    			String s_hr = String(hr);
+    			hr_counter = 0;
+				tft.fillRect(tft.width()-45, 60, 45, 45, ILI9341_BLACK);
+  				tft.setCursor(tft.width()-45, 60);
+				tft.setTextColor(ILI9341_GREENYELLOW);
+  				tft.setTextSize(2);
+  				tft.println(s_hr);
+    		} else { hr_counter += 1; }
+  		}
+  		else {
+    		display_count += 1;
+  		} 
+      // Retrieve the touch point
+      TS_Point p = ts.getPoint();
+      // Scale from 0-4000 to tft.width() using calibration numbers
+      p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
+      p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
+      int temp = p.y;
+      p.y = p.x;
+      p.x = temp;
+      if (alarm_button.isTapped(p.x,p.y)){
+        currentMode = 1;
+      }
+    }
   }
-  else {
-    display_count += 1;
-  } 
-
-  // Check if there is touch data
-   if (ts.bufferEmpty()){
-    return;
+  /*alarm screen*/
+  if (currentMode == 1){
+    SettingsScreenInit();
+    while (currentMode == 1){
+      TS_Point p = ts.getPoint();
+      // Scale from 0-4000 to tft.width() using calibration numbers
+      p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
+      p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
+      int temp = p.y;
+      p.y = p.x;
+      p.x = temp;
+      if (confirm_button.isTapped(p.x,p.y)){
+        currentMode = 0;
+      }
+    }
   }
-  // Retrieve the touch point
-  TS_Point p = ts.getPoint();
-  while(!ts.bufferEmpty()){
-      TS_Point throwaway = ts.getPoint(); 
-  }
-  // Scale from 0-4000 to tft.width() using calibration numbers
-  p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
-  p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
-  int temp = p.y;
-  p.y = p.x;
-  p.x = temp;
-
-  // Debugging the analog read
-  tft.setCursor((tft.width()/2) -50, tft.height()/2);
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_RED);
-  int num = analogRead(15);
-  String readout = String(num);
-  clearScreen(ILI9341_BLACK);
-  tft.println(readout); 
 }
   
