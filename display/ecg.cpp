@@ -160,7 +160,7 @@ void ECGReadout::display_signal(){
  */
 int ECGReadout::heart_rate() {
     double sampling_period = 0.00827; // time between samples (in seconds)
-    int threshold = 50;
+    int threshold = 40;
 	int wait = 15;
 	int start = -1;
     int mid = -1;
