@@ -247,6 +247,7 @@ void setup(void){
   ecg.read();
   myTimer.begin(isr, 150);
   myTimer.priority(128);
+  Serial.begin(9600);
 }
 
 void isr(void) {
@@ -255,64 +256,22 @@ void isr(void) {
 	return;
 }
 
-int display_count = 0;
-int hr_counter = 0;
-void loop(void) {
-  /*main screen*/
-  if (currentMode == 0){
-    MainScreenInit();
-    while (currentMode == 0){
-  		if (display_count >= 10) {
-    		ecg.display_signal();
-    		display_count = 0;
-    		if (hr_counter >= 10) {
-  	  			int hr = ecg.heart_rate();
-    			String s_hr = String(hr);
-    			hr_counter = 0;
-				tft.fillRect(tft.width()-45, 60, 45, 45, ILI9341_BLACK);
-  				tft.setCursor(tft.width()-45, 60);
-				tft.setTextColor(ILI9341_GREENYELLOW);
-  				tft.setTextSize(2);
-  				tft.println(s_hr);
-    		} else { hr_counter += 1; }
-  		}
-  		else {
-    		display_count += 1;
-  		} 
+int i = 0;
+void loop(void) {	
+	  int i = 0;
+	  while (i < 1000000) {i ++;}
+		cli();
+		Vector<double> dump = ecg.getFifo();
+		sei();
+		for (uint32_t k = 0; k < 250; k += 1) {
+			Serial.print(dump[k]);
+			Serial.print(", ");
+			delay(10);
+		}
+		Serial.println("");
 	  if (ts.bufferEmpty()) {
-		continue;
-	  }
-      // Retrieve the touch point
-      TS_Point p = ts.getPoint();
-      // Scale from 0-4000 to tft.width() using calibration numbers
-      p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
-      p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
-      int temp = p.y;
-      p.y = p.x;
-      p.x = temp;
-      if (alarm_button.isTapped(p.x,p.y)){
-        currentMode = 1;
-      }
-    }
-  }
-  /*alarm screen*/
-  if (currentMode == 1){
-    SettingsScreenInit();
-    while (currentMode == 1){
-	  if (ts.bufferEmpty()) {
-		continue;
+		return;
 	  }
       TS_Point p = ts.getPoint();
-      // Scale from 0-4000 to tft.width() using calibration numbers
-      p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
-      p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
-      int temp = p.y;
-      p.y = p.x;
-      p.x = temp;
-      if (confirm_button.isTapped(p.x,p.y)){
-        currentMode = 0;
-      }
-    }
-  }
 }
   

@@ -29,6 +29,7 @@ class ECGReadout {
 			ECGReadout(int, int, int, int, int, int, Adafruit_ILI9341*);
 			void draw(void);
 			void read(void);
+			Vector<double>& getFifo(void);
             void display_signal(void);
             int heart_rate(void);
 

@@ -81,6 +81,12 @@ void ECGReadout::read(){
 	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_CYAN);
 }
 
+// Copy data input buffer (for data analysis)
+Vector<double>& ECGReadout::getFifo(void) {
+	Vector<double> dump(fifo);
+	return dump;
+}
+
 /*
  * display_signal() - clear previous signal and print existing signal onto display
  *
