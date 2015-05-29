@@ -7,6 +7,7 @@
 
 #include "interface.h"
 #include "ecg.h"
+#include "spO2.h"
 
 #define ILI9341_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
 #define CS_TOUCH 8
@@ -47,6 +48,7 @@ Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tf
 
 // Create ECG trace
 ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
+spO2Readout spo2 = spO2Readout(10, 100, tft.height() - BOXSIZE, 50, 2, 3, 4, 16, 0, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -130,6 +132,7 @@ void gui_setup(){
 	tft.fillScreen(ILI9341_BLACK);
 	tft.setRotation(1);
 	ecg.draw();
+	spo2.draw();
 }
 
 /*
@@ -253,6 +256,7 @@ void setup(void){
 void isr(void) {
 	//clearScreen(ILI9341_BLUE);
     ecg.read();
+	spo2.read();
 	return;
 }
 
@@ -263,8 +267,8 @@ void loop(void) {
 		cli();
 		Vector<double> dump = ecg.getFifo();
 		sei();
-		for (uint32_t k = 0; k < 1500; k += 1) {
-			Serial.print(dump[k]);
+		for (uint32_t k = 0; k < 1200; k += 1) {
+			Serial.print(dump[k], 6);
 			Serial.print(", ");
 			delay(10);
 		}
