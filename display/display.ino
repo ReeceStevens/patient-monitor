@@ -263,7 +263,7 @@ void loop(void) {
 		cli();
 		Vector<double> dump = ecg.getFifo();
 		sei();
-		for (uint32_t k = 0; k < 250; k += 1) {
+		for (uint32_t k = 0; k < 1500; k += 1) {
 			Serial.print(dump[k]);
 			Serial.print(", ");
 			delay(10);
