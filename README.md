@@ -3,7 +3,7 @@
 Texas Engineering World Health presents the FreePulse patient monitor, 
 a low cost alternative to traditional patient monitor devices. 
 
-![alt tag](https://github.com/ReeceStevens/patient-monitor/raw/resources/cover.png)
+![alt tag](resources/cover.png)
 
 Features
 --------
