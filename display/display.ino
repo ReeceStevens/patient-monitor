@@ -15,6 +15,8 @@
 #define CS_SCREEN  10
 #define DC 9
 #define RST 7
+#define HOMESCREEN 0
+#define ALARMSCREEN 1
 
 // This is calibration data for the raw touch data to the screen coordinates
 #define TS_MINX 150
@@ -34,6 +36,7 @@ int biasECGMax = 0;
 int biasECGMin = 0;
 int biasSP02Max = 0;
 int biasSP02Min = 0;
+int i = 0;
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS_SCREEN, DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
@@ -55,10 +58,15 @@ Button mode_button = Button(BOXSIZE*2,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true
 Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
 
 // Create settings page buttons
-Button ECGPlus = Button(30,70,18,18,ILI9341_BLACK,true,&tft);
-Button ECGMinus = Button(100,70,18,18,ILI9341_BLACK,true,&tft);
-Button ECGPlus1 = Button(180,70,18,18,ILI9341_BLACK,true,&tft);
-Button ECGMinus1 = Button(250,70,18,18,ILI9341_BLACK,true,&tft);
+
+/*for ECGMin value*/
+Button ECGPlus = Button(100,70,18,18,ILI9341_BLACK,true,&tft);
+Button ECGMinus = Button(30,70,18,18,ILI9341_BLACK,true,&tft);
+/*for ECGMax value*/
+Button ECGPlus1 = Button(250,70,18,18,ILI9341_BLACK,true,&tft);
+Button ECGMinus1 = Button(180,70,18,18,ILI9341_BLACK,true,&tft);
+
+
 Button SP02Plus = Button(30,120,18,18,ILI9341_WHITE,true,&tft);
 Button SP02Minus = Button(100,120,18,18,ILI9341_WHITE,true,&tft);
 Button SP02Plus1 = Button(180,120,18,18,ILI9341_WHITE,true,&tft);
@@ -218,18 +226,11 @@ void cancel_button_setup(void){
 
 void ECGSettings_setup(void){
   /* MINIMUM VALUE */
-  if (DEFAULT_ECG_MIN + biasECGMin < 100){
-    tft.setCursor(63, 72);
-    tft.setTextSize(2);
-    tft.setTextColor(ILI9341_GREEN);
-    tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
-  }
-  if (DEFAULT_ECG_MIN + biasECGMin > 99){
-    tft.setCursor(56, 72);
-    tft.setTextSize(2);
-    tft.setTextColor(ILI9341_GREEN);
-    tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
-  }
+  tft.setCursor(63, 72);
+  tft.setTextSize(2);    
+  tft.setTextColor(ILI9341_GREEN);
+  tft.printf("%d", DEFAULT_ECG_MIN);
+ 
   createVLabel(0, 55, ecgLabel, 2, ILI9341_GREEN);
   ECGPlus.draw();
   ECGMinus.draw();
@@ -237,18 +238,11 @@ void ECGSettings_setup(void){
   createHLabel(104, 72, "+", 2, ILI9341_WHITE);
   
   /* MAXIMUM VALUE */
-  if (DEFAULT_ECG_MAX + biasECGMax < 100){
-    tft.setCursor(213, 72);
-    tft.setTextSize(2);
-    tft.setTextColor(ILI9341_GREEN);
-    tft.printf("%d", DEFAULT_ECG_MAX + biasECGMax);
-  }
-  if (DEFAULT_ECG_MAX + biasECGMax > 99){
-    tft.setCursor(206, 72);
-    tft.setTextSize(2);
-    tft.setTextColor(ILI9341_GREEN);
-    tft.printf("%d", DEFAULT_ECG_MAX + biasECGMax);
-  }
+  tft.setCursor(213, 72);
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_GREEN);
+  tft.printf("%d", DEFAULT_ECG_MAX + biasECGMax);
+  
   ECGPlus1.draw();
   ECGMinus1.draw();
   createHLabel(184, 72, "-", 2, ILI9341_WHITE);
@@ -270,8 +264,8 @@ void SP02Settings_setup(void){
     tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
   }
   createVLabel(0, 55, ecgLabel, 2, ILI9341_GREEN);
-  ECGPlus.draw();
-  ECGMinus.draw();
+  //ECGPlus.draw();
+  //ECGMinus.draw();
   createHLabel(34, 72, "-", 2, ILI9341_WHITE);
   createHLabel(104, 72, "+", 2, ILI9341_WHITE);
   
@@ -288,8 +282,8 @@ void SP02Settings_setup(void){
     tft.setTextColor(ILI9341_GREEN);
     tft.printf("%d", DEFAULT_ECG_MAX + biasECGMax);
   }
-  ECGPlus1.draw();
-  ECGMinus1.draw();
+  //ECGPlus1.draw();
+  //ECGMinus1.draw();
   createHLabel(184, 72, "-", 2, ILI9341_WHITE);
   createHLabel(254, 72, "+", 2, ILI9341_WHITE);
 }
@@ -343,7 +337,10 @@ void fixCoordinates(int* x, int* y){
 }
 
 TS_Point getFixedCoordinates(void){
-   TS_Point p = ts.getPoint();
+   p = ts.getPoint();
+   while(!ts.bufferEmpty()){
+       TS_Point throwaway = ts.getPoint(); 
+   }
    // Scale from 0-4000 to tft.width() using calibration numbers
    p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
    p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
@@ -389,20 +386,22 @@ void dispECGWave(void){
       }
 }
 void isr(void) {
-  if (currentMode == 0 && confirm_button.isTapped(p.x,p.y)){
-        currentMode = 1;
+  if (currentMode == HOMESCREEN && alarm_button.isTapped(p.x,p.y)){
+    currentMode = ALARMSCREEN;
   }
-  if (currentMode == 1 && alarm_button.isTapped(p.x,p.y)){
-        currentMode = 0;
+  if (currentMode == ALARMSCREEN){
+    if(confirm_button.isTapped(p.x,p.y)){
+      currentMode = HOMESCREEN;
+    }
   }    
 }
 
 
 void loop(void) {
   /*main screen*/
-  if (currentMode == 1){
+  if (currentMode == HOMESCREEN){
     MainScreenInit();
-    while (currentMode == 1){
+    while (currentMode == HOMESCREEN){
       dispECGWave();
       // Retrieve the touch point
       p = getFixedCoordinates();
@@ -414,10 +413,58 @@ void loop(void) {
     }
   }
   /*alarm screen*/
-  if (currentMode == 0){
+  if (currentMode == ALARMSCREEN){
     SettingsScreenInit();
-    while (currentMode == 0){
+    while(currentMode == ALARMSCREEN){
       p = getFixedCoordinates();
+      if(ECGPlus.isTapped(p.x,p.y)){
+        biasECGMin += 1;
+        /*for two digit numbers*/
+        if (DEFAULT_ECG_MIN + biasECGMin < 100){
+          tft.fillRect(56, 72, 45, 20, ILI9341_BLACK);
+          tft.setCursor(63, 72);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_GREEN);
+          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+            if (ts.bufferEmpty()){
+        p.x = 0;
+        p.y = 0;
+      }
+        }
+        else if (DEFAULT_ECG_MIN + biasECGMin > 99){
+          /*for three digit numbers*/
+          tft.fillRect(56, 72, 45, 20, ILI9341_BLACK);
+          tft.setCursor(56, 72);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_GREEN);
+          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+            if (ts.bufferEmpty()){
+        p.x = 0;
+        p.y = 0;
+      }
+        }
+      }
+    
+      /*if(ECGMinus.isTapped(p.x,p.y)){
+      biasECGMin -= 1;
+      //for two digit numbers
+        if (DEFAULT_ECG_MIN + biasECGMin < 100){
+          tft.setCursor(63, 72);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_GREEN);
+          
+          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+        }
+        if (DEFAULT_ECG_MIN + biasECGMin > 99){
+          //for three digit numbers
+          tft.setCursor(56, 72);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_GREEN);
+          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+        }
+      }*/
+      
+      /*before the isr was implemented*/
       //TS_Point p = ts.getPoint();
       // Scale from 0-4000 to tft.width() using calibration numbers
       //p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
