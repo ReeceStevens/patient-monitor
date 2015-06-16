@@ -75,7 +75,7 @@ Button SP02Minus1 = Button(250,120,18,18,ILI9341_WHITE,true,&tft);
 
 // Create ECG trace
 ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
-TS_Point p;
+//TS_Point p;
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -337,9 +337,9 @@ void fixCoordinates(int* x, int* y){
 }
 
 TS_Point getFixedCoordinates(void){
-   p = ts.getPoint();
+   TS_Point p = ts.getPoint();
    while(!ts.bufferEmpty()){
-       TS_Point throwaway = ts.getPoint(); 
+       volatile TS_Point q = ts.getPoint(); 
    }
    // Scale from 0-4000 to tft.width() using calibration numbers
    p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
@@ -359,8 +359,9 @@ void setup(void){
   //temperature_setup();
   //settings_setup();
   ecg.read();
-  myTimer.begin(isr, 150);
-  myTimer.priority(128);
+  //myTimer.begin(isr, 1000000);
+  //myTimer.priority(128);
+  // Serial.begin(9600);
 }
 
 int display_count = 0;
@@ -385,7 +386,9 @@ void dispECGWave(void){
         display_count += 1;
       }
 }
-void isr(void) {
+/* void isr(void) {
+  if (ts.bufferEmpty()) { return; }
+  TS_Point p = getFixedCoordinates();
   if (currentMode == HOMESCREEN && alarm_button.isTapped(p.x,p.y)){
     currentMode = ALARMSCREEN;
   }
@@ -394,7 +397,7 @@ void isr(void) {
       currentMode = HOMESCREEN;
     }
   }    
-}
+} */
 
 
 void loop(void) {
@@ -402,21 +405,24 @@ void loop(void) {
   if (currentMode == HOMESCREEN){
     MainScreenInit();
     while (currentMode == HOMESCREEN){
-      dispECGWave();
+      // dispECGWave();
       // Retrieve the touch point
-      p = getFixedCoordinates();
+      TS_Point p = getFixedCoordinates();
       //TS_Point p = ts.getPoint();
       // Scale from 0-4000 to tft.width() using calibration numbers
       //p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
       //p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
       //fixCoordinates(&(p.x), &(p.y));
+      if (alarm_button.isTapped(p.x,p.y)){
+        currentMode = ALARMSCREEN;
+      }
     }
   }
   /*alarm screen*/
   if (currentMode == ALARMSCREEN){
     SettingsScreenInit();
     while(currentMode == ALARMSCREEN){
-      p = getFixedCoordinates();
+      TS_Point p = getFixedCoordinates();
       if(ECGPlus.isTapped(p.x,p.y)){
         biasECGMin += 1;
         /*for two digit numbers*/
@@ -426,11 +432,7 @@ void loop(void) {
           tft.setTextSize(2);
           tft.setTextColor(ILI9341_GREEN);
           tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
-            if (ts.bufferEmpty()){
-        p.x = 0;
-        p.y = 0;
-      }
-        }
+          }
         else if (DEFAULT_ECG_MIN + biasECGMin > 99){
           /*for three digit numbers*/
           tft.fillRect(56, 72, 45, 20, ILI9341_BLACK);
@@ -438,13 +440,11 @@ void loop(void) {
           tft.setTextSize(2);
           tft.setTextColor(ILI9341_GREEN);
           tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
-            if (ts.bufferEmpty()){
-        p.x = 0;
-        p.y = 0;
-      }
         }
       }
-    
+        if(confirm_button.isTapped(p.x,p.y)){
+            currentMode = HOMESCREEN;
+        }
       /*if(ECGMinus.isTapped(p.x,p.y)){
       biasECGMin -= 1;
       //for two digit numbers
