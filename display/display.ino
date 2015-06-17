@@ -337,9 +337,10 @@ void fixCoordinates(int* x, int* y){
 }
 
 TS_Point getFixedCoordinates(void){
+   if (ts.bufferEmpty()) { return TS_Point(tft.height(), tft.width(), 0); }
    TS_Point p = ts.getPoint();
    while(!ts.bufferEmpty()){
-       volatile TS_Point q = ts.getPoint(); 
+       p = ts.getPoint(); 
    }
    // Scale from 0-4000 to tft.width() using calibration numbers
    p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
