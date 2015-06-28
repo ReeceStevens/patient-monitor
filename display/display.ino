@@ -46,7 +46,7 @@ Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tf
 
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
+ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 14 , 0, &tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
