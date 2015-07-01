@@ -79,7 +79,7 @@ void createVLabel(int x_coord, int y_coord, char* label, int textsize, int color
   tft.setTextColor(color);
   while(*label){
     tft.setCursor(x_coord, y_coord);
-    tft.printf("%c", *label);
+    tft.println(*label);
     label += 1;
     y_coord += 8;
   }
@@ -94,7 +94,7 @@ void createHLabel(int x_coord, int y_coord, char* label,int textsize, int color)
   tft.setCursor(x_coord, y_coord);
   tft.setCursor(x_coord, y_coord);
   while(*label){
-    tft.printf("%c", *label);
+    tft.println(*label);
     label += 1;
   }
 }
