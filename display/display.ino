@@ -38,6 +38,10 @@ int biasSP02Max = 0;
 int biasSP02Min = 0;
 int i = 0;
 
+// Keep track of screen inversion and alarm state
+int inverted = 0;
+int activeAlarm = 0;
+
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS_SCREEN, DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 
@@ -335,25 +339,55 @@ TS_Point getFixedCoordinates(void){
    return p;
 }
 
-IntervalTimer myTimer;
+void toggleInvert(void) {
+    if (inverted) {
+        tft.invertDisplay(0);
+        inverted = 0;
+    } else {
+        tft.invertDisplay(1);
+        inverted = 1;
+    }
+    return; 
+}
+
+// Interrupts for sampling and alarm system
+IntervalTimer sample_timer;
+//IntervalTimer alarm_timer;
+
+void throwAlarm(void) {
+    //alarm_timer.begin(alarm_isr, 10000);
+    //alarm_timer.priority(130);
+    activeAlarm = 1;
+}
+
+void stopAlarm(void) {
+    //alarm_timer.end();
+    activeAlarm = 0;
+}
+
 
 void setup(void){
+  tft.invertDisplay(0);
+  inverted = 0;
   gui_setup();
   product_title();  
   ECG_setup();
   //sp02_setup();
   //temperature_setup();
-  //settings_setup();
   alarm_button_setup();
   ecg.read();
-  myTimer.begin(isr, 150);
-  myTimer.priority(128);
+  sample_timer.begin(sampling_isr, 150);
+  sample_timer.priority(128);
 }
 
-void isr(void) {
-	//clearScreen(ILI9341_BLUE);
+void sampling_isr(void) {
     ecg.read();
 	return;
+}
+
+void alarm_isr(void) {
+    //toggleInvert();
+    return;
 }
 
 int display_count = 0;
@@ -375,11 +409,22 @@ void loop(void) {
 				tft.setTextColor(ILI9341_GREENYELLOW);
   				tft.setTextSize(2);
   				tft.println(s_hr);
-    		} else { hr_counter += 1; }
+                /*
+                if ((hr < DEFAULT_ECG_MIN + biasECGMin) || (hr > DEFAULT_ECG_MAX + biasSP02Max)){
+                    if (!activeAlarm) {
+                        throwAlarm();
+                    }
+                }
+                else {
+                    if (activeAlarm) {
+                        stopAlarm(); 
+                    }
+    		    } */ 
   		}
-  		else {
-    		display_count += 1;
-  		} 
+        else { hr_counter += 1; }
+        }
+  		else { display_count += 1;} 
+
 	  if (ts.bufferEmpty()) {
 		continue;
 	  }
