@@ -57,18 +57,17 @@ Button sp_button = Button(0,BOXSIZE,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
 Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
 Button alarm_button = Button(260,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
 Button confirm_button = Button(0,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
-Button default_button = Button(BOXSIZE,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
 Button mode_button = Button(BOXSIZE*2,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
 Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
-
+Button default_button = Button(tft.height()-BOXSIZE,BOXSIZE,BOXSIZE-10,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
 // Create settings page buttons
 
 /*for ECGMin value*/
-Button ECGPlus = Button(100,67,18,25,ILI9341_RED,true,&tft);
-Button ECGMinus = Button(30,67,18,25,ILI9341_RED,true,&tft);
+Button ECGPlus = Button(100,50,18,25,ILI9341_RED,true,&tft);
+Button ECGMinus = Button(30,50,18,25,ILI9341_RED,true,&tft);
 /*for ECGMax value*/
-Button ECGPlus1 = Button(250,67,18,25,ILI9341_RED,true,&tft);
-Button ECGMinus1 = Button(180,67,18,25,ILI9341_RED,true,&tft);
+Button ECGPlus1 = Button(100,100,18,25,ILI9341_RED,true,&tft);
+Button ECGMinus1 = Button(30,100,18,25,ILI9341_RED,true,&tft);
 
 
 Button SP02Plus = Button(30,120,18,18,ILI9341_WHITE,true,&tft);
@@ -214,7 +213,7 @@ void confirm_button_setup(void){
 
 void default_button_setup(void){
   default_button.draw();
-  createHLabel(BOXSIZE + 10, 217, defaultLabel, 1, ILI9341_BLACK);
+  createHLabel(tft.height() - BOXSIZE + 10, BOXSIZE + 17, defaultLabel, 1, ILI9341_BLACK);
 }
 
 void mode_button_setup(void){
@@ -229,29 +228,29 @@ void cancel_button_setup(void){
 
 void ECGSettings_setup(void){
   /* MINIMUM VALUE */
-  tft.fillRect(52, 67, 45, 25, ILI9341_LIGHTGREY);
-  tft.setCursor(63, 72);
+  tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
+  tft.setCursor(63, 55);
   tft.setTextSize(2);    
   tft.setTextColor(ILI9341_BLACK);
   tft.printf("%d", DEFAULT_ECG_MIN);
  
-  createVLabel(0, 55, ecgLabel, 2, ILI9341_GREEN);
+  createVLabel(0, 65, ecgLabel, 2, ILI9341_GREEN);
   ECGPlus.draw();
   ECGMinus.draw();
-  createHLabel(34, 72, "-", 2, ILI9341_WHITE);
-  createHLabel(104, 72, "+", 2, ILI9341_WHITE);
+  createHLabel(34, 55, "-", 2, ILI9341_WHITE);
+  createHLabel(104, 55, "+", 2, ILI9341_WHITE);
   
   /* MAXIMUM VALUE */
-  tft.fillRect(202, 67, 45, 25, ILI9341_LIGHTGREY);
-  tft.setCursor(213, 72);
+  tft.fillRect(52, 100, 45, 25, ILI9341_LIGHTGREY);
+  tft.setCursor(63, 105);
   tft.setTextSize(2);
   tft.setTextColor(ILI9341_BLACK);
   tft.printf("%d", DEFAULT_ECG_MAX + biasECGMax);
   
   ECGPlus1.draw();
   ECGMinus1.draw();
-  createHLabel(184, 72, "-", 2, ILI9341_WHITE);
-  createHLabel(254, 72, "+", 2, ILI9341_WHITE);
+  createHLabel(34, 105, "-", 2, ILI9341_WHITE);
+  createHLabel(104, 105, "+", 2, ILI9341_WHITE);
 }
 
 void SP02Settings_setup(void){
@@ -310,6 +309,10 @@ void MainScreenInit(void){
 
 void SettingsScreenInit(void){
   clearScreen(ILI9341_BLACK);
+  tft.setCursor(80,0);
+  tft.setTextSize(2);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.println("Alarm Settings");
   confirm_button_setup();
   default_button_setup();
   mode_button_setup();
@@ -453,18 +456,18 @@ void loop(void) {
         biasECGMin += 1;
         /*for two digit numbers*/
         if (DEFAULT_ECG_MIN + biasECGMin < 100){
-          tft.fillRect(52, 67, 45, 25, ILI9341_LIGHTGREY);
-          tft.setCursor(63, 72);
+          tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(63, 55);
           tft.setTextSize(2);
-          tft.setTextColor(ILI9341_GREEN);
+          tft.setTextColor(ILI9341_BLACK);
           tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
           }
         else if (DEFAULT_ECG_MIN + biasECGMin > 99){
           /*for three digit numbers*/
-          tft.fillRect(52, 67, 45, 25, ILI9341_LIGHTGREY);
-          tft.setCursor(56, 72);
+          tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(56, 55);
           tft.setTextSize(2);
-          tft.setTextColor(ILI9341_GREEN);
+          tft.setTextColor(ILI9341_BLACK);
           tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
         }
       }
@@ -472,18 +475,18 @@ void loop(void) {
         biasECGMin -= 1;
         /*for two digit numbers*/
         if (DEFAULT_ECG_MIN + biasECGMin < 100){
-          tft.fillRect(52, 67, 45, 25, ILI9341_LIGHTGREY);
-          tft.setCursor(63, 72);
+          tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(63, 55);
           tft.setTextSize(2);
-          tft.setTextColor(ILI9341_GREEN);
+          tft.setTextColor(ILI9341_BLACK);
           tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
           }
         else if (DEFAULT_ECG_MIN + biasECGMin > 99){
           /*for three digit numbers*/
-          tft.fillRect(52, 67, 45, 25, ILI9341_LIGHTGREY);
-          tft.setCursor(56, 72);
+          tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(56, 55);
           tft.setTextSize(2);
-          tft.setTextColor(ILI9341_GREEN);
+          tft.setTextColor(ILI9341_BLACK);
           tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
         }
       }
