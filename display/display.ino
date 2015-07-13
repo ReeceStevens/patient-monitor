@@ -438,7 +438,7 @@ void loop(void) {
 
 	  if (ts.bufferEmpty()) {
 		continue;
-	  }
+	  } 
       // Retrieve the touch point
       TS_Point p = getFixedCoordinates();
       if (alarm_button.isTapped(p.x,p.y)){

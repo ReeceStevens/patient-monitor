@@ -56,7 +56,6 @@ void ECGReadout::draw(){
  *
  */
 void ECGReadout::read(){
-	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_BLUE);
 	if (avg_count < 5) {
 		double input_num = (double) analogRead(pin);
 		double adjusted_num =  input_num * len;
@@ -77,8 +76,6 @@ void ECGReadout::read(){
     	fifo_end = (fifo_end + 1) % fifo_size;
 	}
 
-    // Move our trackers
-	//tft_interface->fillRect(60,0,tft_interface->width()-60,tft_interface->height(),ILI9341_CYAN);
 }
 
 /*
