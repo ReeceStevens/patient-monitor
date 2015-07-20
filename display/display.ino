@@ -56,10 +56,10 @@ Button hr_button = Button(0,0,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
 Button sp_button = Button(0,BOXSIZE,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
 Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
 Button alarm_button = Button(260,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
-Button confirm_button = Button(0,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
+Button confirm_button = Button(0,200,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
 Button mode_button = Button(BOXSIZE*2,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
-Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
-Button default_button = Button(tft.height()-BOXSIZE,BOXSIZE,BOXSIZE-10,BOXSIZE,ILI9341_LIGHTGREY,true,&tft);
+Button cancel_button = Button(WIDTH-BOXSIZE,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
+Button default_button = Button(WIDTH-2*BOXSIZE-18,BOXSIZE,BOXSIZE,BOXSIZE-20,ILI9341_LIGHTGREY,true,&tft);
 // Create settings page buttons
 
 /*for ECGMin value*/
@@ -84,8 +84,8 @@ ECGReadout ecg = ECGReadout(10,100,tft.height() - BOXSIZE, 100, 14 , 0, &tft);
  */
  
  //Write labels
-char Title[] = "Texas Engineering World Health";
-char Version[] = "Patient Monitor v2.1";
+char Title[] = "FreePulse Patient Monitor";
+char Version[] = "Alpha Software v0.1";
 char ecgTitle[] = "ECG/HR (bpm)";
 char ecgLabel[] = "ECG";
 char sp02Title[] = "sp02 (%Sat.)";
@@ -143,8 +143,8 @@ void draw_submenu() {
  * product_title() - prints product name and version no.
  */
 void product_title(){
-  createHLabel(BOXSIZE + 20, 0, Title, 1, ILI9341_WHITE);
-  createHLabel(BOXSIZE + 40, 10, Version, 1, ILI9341_WHITE);
+  createHLabel(BOXSIZE + 35, 0, Title, 1, ILI9341_WHITE);
+  createHLabel(BOXSIZE + 45, 10, Version, 1, ILI9341_WHITE);
   
   /* create border */
   tft.drawFastVLine(BOXSIZE + 17, 0, 20, ILI9341_WHITE);
@@ -213,7 +213,7 @@ void confirm_button_setup(void){
 
 void default_button_setup(void){
   default_button.draw();
-  createHLabel(tft.height() - BOXSIZE + 10, BOXSIZE + 17, defaultLabel, 1, ILI9341_BLACK);
+  createHLabel(WIDTH - BOXSIZE + 10, BOXSIZE + 17, defaultLabel, 1, ILI9341_BLACK);
 }
 
 void mode_button_setup(void){
@@ -223,13 +223,13 @@ void mode_button_setup(void){
 
 void cancel_button_setup(void){
   cancel_button.draw();
-  createHLabel(BOXSIZE*3 + 14, 217, cancelLabel, 1, ILI9341_BLACK);
+  createHLabel(WIDTH + 35, 217, cancelLabel, 1, ILI9341_BLACK);
 }
 
 void ECGSettings_setup(void){
   /* MINIMUM VALUE */
   tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
-  tft.setCursor(63, 55);
+  (DEFAULT_ECG_MIN + biasECGMin < 100) ? tft.setCursor(63,55) : tft.setCursor(56,55);
   tft.setTextSize(2);    
   tft.setTextColor(ILI9341_BLACK);
   tft.printf("%d", DEFAULT_ECG_MIN);
@@ -242,7 +242,7 @@ void ECGSettings_setup(void){
   
   /* MAXIMUM VALUE */
   tft.fillRect(52, 100, 45, 25, ILI9341_LIGHTGREY);
-  tft.setCursor(63, 105);
+  (DEFAULT_ECG_MAX + biasECGMax < 100) ? tft.setCursor(63,105) : tft.setCursor(56,105);
   tft.setTextSize(2);
   tft.setTextColor(ILI9341_BLACK);
   tft.printf("%d", DEFAULT_ECG_MAX + biasECGMax);
@@ -315,7 +315,7 @@ void SettingsScreenInit(void){
   tft.println("Alarm Settings");
   confirm_button_setup();
   default_button_setup();
-  mode_button_setup();
+  //mode_button_setup();
   cancel_button_setup();
   tft.drawFastVLine(BOXSIZE, 200, 40, ILI9341_BLACK);
   tft.drawFastVLine(BOXSIZE*2, 200, 40, ILI9341_BLACK);
@@ -407,6 +407,12 @@ void loop(void) {
   if (currentMode == HOMESCREEN){
     MainScreenInit();
     stopAlarm();
+    int delay_touch_detection = 10000;
+    for (int i = 0; i < delay_touch_detection; i += 1) {
+        if (!ts.bufferEmpty()){
+            volatile TS_Point tossout = getFixedCoordinates();
+        }
+    }
     while (currentMode == HOMESCREEN){
   		if (display_count >= 10) {
     		ecg.display_signal();
@@ -448,52 +454,132 @@ void loop(void) {
   }
   /*alarm screen*/
   if (currentMode == ALARMSCREEN){
+    // Prevent double button presses between cancel and alarm settings
     SettingsScreenInit();
+    int tempECGMaxbias = biasECGMax;
+    int tempECGMinbias = biasECGMin;
+    int delay_touch_detection = 10000;
+    for (int i = 0; i < delay_touch_detection; i += 1) {
+        if (!ts.bufferEmpty()){
+            volatile TS_Point tossout = getFixedCoordinates();
+        }
+    }
     //throwAlarm();
     while(currentMode == ALARMSCREEN){
       TS_Point p = getFixedCoordinates();
+      int total_ecg_max = DEFAULT_ECG_MAX + tempECGMaxbias;
+      int total_ecg_min = DEFAULT_ECG_MIN + tempECGMinbias;
       if(ECGPlus.isTapped(p.x,p.y)){
-        biasECGMin += 1;
+        // Skip if you'll exceed the max value
+        if (total_ecg_min + 1 > total_ecg_max) { continue; }
+        tempECGMinbias += 1;
         /*for two digit numbers*/
-        if (DEFAULT_ECG_MIN + biasECGMin < 100){
+        if (DEFAULT_ECG_MIN + tempECGMinbias < 100){
           tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
           tft.setCursor(63, 55);
           tft.setTextSize(2);
           tft.setTextColor(ILI9341_BLACK);
-          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+          tft.printf("%d", DEFAULT_ECG_MIN + tempECGMinbias);
           }
-        else if (DEFAULT_ECG_MIN + biasECGMin > 99){
+        else if (DEFAULT_ECG_MIN + tempECGMinbias > 99){
           /*for three digit numbers*/
           tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
           tft.setCursor(56, 55);
           tft.setTextSize(2);
           tft.setTextColor(ILI9341_BLACK);
-          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+          tft.printf("%d", DEFAULT_ECG_MIN + tempECGMinbias);
         }
       }
       if(ECGMinus.isTapped(p.x,p.y)){
-        biasECGMin -= 1;
+        // Don't let the minimum go negative
+        if (total_ecg_min - 1 < 0) { continue; }
+        tempECGMinbias -= 1;
         /*for two digit numbers*/
-        if (DEFAULT_ECG_MIN + biasECGMin < 100){
+        if (DEFAULT_ECG_MIN + tempECGMinbias < 100){
           tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
           tft.setCursor(63, 55);
           tft.setTextSize(2);
           tft.setTextColor(ILI9341_BLACK);
-          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+          tft.printf("%d", DEFAULT_ECG_MIN + tempECGMinbias);
           }
-        else if (DEFAULT_ECG_MIN + biasECGMin > 99){
+        else if (DEFAULT_ECG_MIN + tempECGMinbias > 99){
           /*for three digit numbers*/
           tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
           tft.setCursor(56, 55);
           tft.setTextSize(2);
           tft.setTextColor(ILI9341_BLACK);
-          tft.printf("%d", DEFAULT_ECG_MIN + biasECGMin);
+          tft.printf("%d", DEFAULT_ECG_MIN + tempECGMinbias);
         }
       }
 
-        if(confirm_button.isTapped(p.x,p.y)){
-            currentMode = HOMESCREEN;
+      if(ECGPlus1.isTapped(p.x,p.y)){
+        // Set reasonable upper limit on heartrate
+        if (total_ecg_max + 1 > 300) { continue; }
+        tempECGMaxbias += 1;
+        /*for two digit numbers*/
+        if (DEFAULT_ECG_MAX + tempECGMaxbias < 100){
+          tft.fillRect(52, 100, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(63, 105);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_BLACK);
+          tft.printf("%d", DEFAULT_ECG_MAX + tempECGMaxbias);
+          }
+        else if (DEFAULT_ECG_MAX + tempECGMaxbias > 99){
+          /*for three digit numbers*/
+          tft.fillRect(52, 100, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(56, 105);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_BLACK);
+          tft.printf("%d", DEFAULT_ECG_MAX + tempECGMaxbias);
         }
+      }
+      if(ECGMinus1.isTapped(p.x,p.y)){
+        // Don't let the max go any lower than the min
+        if (total_ecg_max - 1 < total_ecg_min) { continue; }
+        tempECGMaxbias -= 1;
+        /*for two digit numbers*/
+        if (DEFAULT_ECG_MAX + tempECGMaxbias < 100){
+          tft.fillRect(52, 100, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(63, 105);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_BLACK);
+          tft.printf("%d", DEFAULT_ECG_MAX + tempECGMaxbias);
+          }
+        else if (DEFAULT_ECG_MAX + tempECGMaxbias > 99){
+          /*for three digit numbers*/
+          tft.fillRect(52, 100, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(56, 105);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_BLACK);
+          tft.printf("%d", DEFAULT_ECG_MAX + tempECGMaxbias);
+        }
+      }
+   
+      // Reset alarm parameters to the default values 
+      if (default_button.isTapped(p.x,p.y)) {
+        tempECGMaxbias = 0;
+          tft.fillRect(52, 100, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(63, 105);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_BLACK);
+          tft.printf("%d", DEFAULT_ECG_MAX + tempECGMaxbias);
+        tempECGMinbias = 0;
+          tft.fillRect(52, 50, 45, 25, ILI9341_LIGHTGREY);
+          tft.setCursor(63, 55);
+          tft.setTextSize(2);
+          tft.setTextColor(ILI9341_BLACK);
+          tft.printf("%d", DEFAULT_ECG_MIN + tempECGMinbias);
+      }
+
+      if(confirm_button.isTapped(p.x,p.y)){
+        biasECGMax = tempECGMaxbias;
+        biasECGMin = tempECGMinbias;
+        currentMode = HOMESCREEN;
+      }
+
+      if (cancel_button.isTapped(p.x,p.y)) {
+        currentMode = HOMESCREEN;
+      }
     }
   }  
 }
