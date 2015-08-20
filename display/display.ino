@@ -61,9 +61,9 @@ volatile int activeAlarm = 0;
 
 
 Button settings = Button(5,5,1,1,ILI9341_RED,true,&tft);
-Button confirm_button = Button(4,1,1,1,ILI9341_GREEN,true,&tft);
-Button cancel_button = Button(4,6,1,1,ILI9341_RED,true,&tft);
-Button default_button = Button(2,4,1,1,ILI9341_LIGHTGREY,true,&tft);
+Button confirm_button = Button(5,1,1,1,ILI9341_GREEN,true,&tft);
+Button cancel_button = Button(5,5,1,1,ILI9341_RED,true,&tft);
+Button default_button = Button(3,4,1,1,ILI9341_LIGHTGREY,true,&tft);
 
 // OLD CODE
 
@@ -294,7 +294,7 @@ void stopAlarm(void) {
     sei();
 }
 
-
+/*
 void setup(void){
   //tft.invertDisplay(true);
   gui_setup();
@@ -306,7 +306,7 @@ void setup(void){
   ecg.read();
   sample_timer.begin(sampling_isr, 150);
   sample_timer.priority(128);
-}
+} */
 
 void sampling_isr(void) {
     ecg.read();
