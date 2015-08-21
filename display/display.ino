@@ -74,7 +74,7 @@ TextBox version = TextBox(2,4,1,4,ILI9341_BLACK,ILI9341_WHITE,2,true," Developme
 
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(10,100,tft.height() - BOXSIZE, 100, 14 , 0, &tft);
+ECGReadout ecg = ECGReadout(3,2,3,8,14,0,ILI9341_GREENYELLOW,ILI9341_RED,&tft);
 
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -147,9 +147,8 @@ void showGrid(void){
 void gui_setup(){
 	tft.begin();
 	ts.begin();
-	tft.fillScreen(ILI9341_BLACK);
+    clearScreen(ILI9341_BLACK);
 	tft.setRotation(1);
-	ecg.draw();
 }
 
 /*
@@ -164,6 +163,7 @@ void MainScreenInit(void){
   title.draw();
   version.draw();
   settings.draw();
+  ecg.draw();
 }
 
 
@@ -264,14 +264,14 @@ void loop(void) {
     		ecg.display_signal();
     		display_count = 0;
     		if (hr_counter >= 10) {
-  	  			int hr = ecg.heart_rate();
+  	  			/*int hr = ecg.heart_rate();
     			String s_hr = String(hr);
     			hr_counter = 0;
 				tft.fillRect(tft.width()-45, 120, 45, 45, ILI9341_BLACK);
   				tft.setCursor(tft.width()-45, 120);
 				tft.setTextColor(ILI9341_GREENYELLOW);
   				tft.setTextSize(2);
-  				tft.println(s_hr);
+  				tft.println(s_hr);*/
                 showGrid();
                 /*
                 if ((hr < DEFAULT_ECG_MIN + biasECGMin) || (hr > DEFAULT_ECG_MAX + biasSP02Max)){
