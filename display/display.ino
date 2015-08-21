@@ -37,8 +37,8 @@ Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 #define WIDTH tft.height()
 
 // Defining screen proportions
-const int rows = 5;
-const int columns = 5;
+const int rows = 10;
+const int columns = 10;
 
 const int vertical_scale = HEIGHT/rows;
 const int horizontal_scale = WIDTH/columns;
@@ -59,11 +59,16 @@ volatile int inverted = 0;
 volatile int activeAlarm = 0;
 
 
+/* Build all buttons */
 
-Button settings = Button(5,5,1,1,ILI9341_RED,true,&tft);
-Button confirm_button = Button(5,1,1,1,ILI9341_GREEN,true,&tft);
-Button cancel_button = Button(5,5,1,1,ILI9341_RED,true,&tft);
-Button default_button = Button(3,4,1,1,ILI9341_LIGHTGREY,true,&tft);
+Button settings = Button(9,9,2,2,ILI9341_RED,true,"Alarm Settings",&tft);
+Button confirm_button = Button(9,1,2,2,ILI9341_GREEN,true,"Confirm",&tft);
+Button cancel_button = Button(9,9,2,2,ILI9341_RED,true,"Cancel",&tft);
+Button default_button = Button(6,7,2,2,ILI9341_LIGHTGREY,true,"Default Settings",&tft);
+
+/* Build all text boxes */
+TextBox title = TextBox(1,3,1,6,ILI9341_BLACK,ILI9341_WHITE,2,true,"   FreePulse Patient Monitor", &tft);
+TextBox version = TextBox(2,4,1,4,ILI9341_BLACK,ILI9341_WHITE,2,true," Development: v0.5", &tft);
 
 // OLD CODE
 
@@ -122,19 +127,18 @@ void createHLabel(int x_coord, int y_coord, char* label,int textsize, int color)
   }
 }
 
-
-
 /*
- * product_title() - prints product name and version no.
+ * showGrid() - 
+ * DEVELOPMENT FUNCTION ONLY.
+ * Draw gridlines for interface.
  */
-void product_title(){
-  createHLabel(BOXSIZE + 35, 0, Title, 1, ILI9341_WHITE);
-  createHLabel(BOXSIZE + 45, 10, Version, 1, ILI9341_WHITE);
-  
-  /* create border */
-  tft.drawFastVLine(BOXSIZE + 17, 0, 20, ILI9341_WHITE);
-  tft.drawFastHLine(BOXSIZE + 17, 20, 185, ILI9341_WHITE);
-  tft.drawFastVLine(BOXSIZE + 202, 0, 20, ILI9341_WHITE);
+void showGrid(void){
+    for (int i = 1; i < rows; i += 1) {
+        tft.drawFastHLine(1,i*vertical_scale,HEIGHT,ILI9341_LIGHTGREY);
+    }
+    for (int i = 1; i < columns; i += 1) {
+        tft.drawFastVLine(i*horizontal_scale,1,WIDTH,ILI9341_LIGHTGREY);
+    }
 }
 
 /*
@@ -149,66 +153,6 @@ void gui_setup(){
 }
 
 /*
- * ECG_setup() - intialize ECG and HR interfaces
- */
-void ECG_setup(){
-  createHLabel(BOXSIZE + 55, 40, ecgTitle, 1, ILI9341_GREEN);
-  createVLabel(0, 112, ecgLabel, 1, ILI9341_GREEN);
-  createVLabel(tft.width()-45, 120, hrLabel, 1, ILI9341_GREEN);
-  tft.setCursor(tft.width()-30, 120);
-  tft.setTextSize(2);
-  tft.println("60");
-}
-
-
-/*
- * sp02_setup() - intialize sp02 and % saturation interfaces
- */
-void sp02_setup(){
-  createHLabel(BOXSIZE + 55, 125, sp02Title, 1, ILI9341_CYAN);
-  createVLabel(0, 141, sp02Label, 1, ILI9341_CYAN);
-  createVLabel(tft.width()-50, 142, satLabel, 1, ILI9341_CYAN);
-  tft.setCursor(tft.width()-40, 146);
-  tft.setTextSize(2);
-  tft.println("97%"); 
-}
-
-void temperature_setup(){
-  createHLabel(BOXSIZE + 55, 150, tempTitle, 1, ILI9341_GREENYELLOW);
-  createVLabel(30, 171, farLabel, 1, ILI9341_GREENYELLOW);
-  createVLabel(tft.width()-120, 171, celLabel, 1, ILI9341_GREENYELLOW);
-  tft.setCursor(50, 175);
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_GREENYELLOW);
-  tft.println("98.6");
-  tft.setCursor(tft.width()-100, 175);
-  tft.println("37");
-}
-
-void alarm_button_setup(void){
-  settings.draw();
-  createHLabel(265, 210, alarmLabel, 1, ILI9341_BLACK);
-  createHLabel(265, 220, settingsLabel, 1, ILI9341_BLACK);
-}
-
-void confirm_button_setup(void){
-  confirm_button.draw();
-  createHLabel(9, 217, confirmLabel, 1, ILI9341_BLACK);
-}
-
-void default_button_setup(void){
-  default_button.draw();
-  createHLabel(WIDTH - BOXSIZE + 10, BOXSIZE + 17, defaultLabel, 1, ILI9341_BLACK);
-}
-
-
-
-void cancel_button_setup(void){
-  cancel_button.draw();
-  createHLabel(WIDTH + 35, 217, cancelLabel, 1, ILI9341_BLACK);
-}
-
-/*
  * clearScreen(int color) - clear screen with specified color
  */
 void clearScreen(int color){
@@ -217,29 +161,18 @@ void clearScreen(int color){
 
 void MainScreenInit(void){
   clearScreen(ILI9341_BLACK);
-  product_title();  
-  ECG_setup();
-  //sp02_setup();
-  //temperature_setup();
-  alarm_button_setup();
+  title.draw();
+  version.draw();
+  settings.draw();
 }
 
-/*
+
 void SettingsScreenInit(void){
   clearScreen(ILI9341_BLACK);
-  tft.setCursor(80,0);
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.println("Alarm Settings");
-  confirm_button_setup();
-  default_button_setup();
-  //mode_button_setup();
-  cancel_button_setup();
-  tft.drawFastVLine(BOXSIZE, 200, 40, ILI9341_BLACK);
-  tft.drawFastVLine(BOXSIZE*2, 200, 40, ILI9341_BLACK);
-  tft.drawFastVLine(BOXSIZE*3, 200, 40, ILI9341_BLACK);
-  ECGSettings_setup();
-} */
+  confirm_button.draw();
+  default_button.draw();
+  cancel_button.draw();
+}
 
 void fixCoordinates(int* x, int* y){
   int temp = *x;
@@ -294,19 +227,13 @@ void stopAlarm(void) {
     sei();
 }
 
-/*
+
 void setup(void){
-  //tft.invertDisplay(true);
   gui_setup();
-  product_title();  
-  ECG_setup();
-  //sp02_setup();
-  //temperature_setup();
-  alarm_button_setup();
   ecg.read();
   sample_timer.begin(sampling_isr, 150);
   sample_timer.priority(128);
-} */
+}
 
 void sampling_isr(void) {
     ecg.read();
@@ -320,6 +247,7 @@ void alarm_isr(void) {
 
 int display_count = 0;
 int hr_counter = 0;
+
 void loop(void) {
   /*main screen*/
   if (currentMode == HOMESCREEN){
@@ -344,6 +272,7 @@ void loop(void) {
 				tft.setTextColor(ILI9341_GREENYELLOW);
   				tft.setTextSize(2);
   				tft.println(s_hr);
+                showGrid();
                 /*
                 if ((hr < DEFAULT_ECG_MIN + biasECGMin) || (hr > DEFAULT_ECG_MAX + biasSP02Max)){
                     if (!activeAlarm) {
