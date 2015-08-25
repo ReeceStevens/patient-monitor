@@ -49,7 +49,7 @@ private:
 public:
     ECGReadout(int row, int column, int len, int width, int pin, int reset_timer, int trace_color, int background_color, Adafruit_ILI9341* tft):ScreenElement(row,column,len,width,tft), pin(pin),reset_timer(reset_timer), trace_color(trace_color), background_color(background_color) {
 	    // Allocate space for one integer per pixel length-wise	  a
-        fifo_multiplier = 9;
+        fifo_multiplier = 4;
         fifo_size = real_width * fifo_multiplier; 
         fifo = Vector<double> (fifo_size);
 	    averager_queue = Vector<double>(5);

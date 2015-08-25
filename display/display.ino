@@ -75,7 +75,7 @@ TextBox version = TextBox(2,4,1,4,ILI9341_BLACK,ILI9341_WHITE,2,true," Developme
 
 // Create ECG trace
 ECGReadout ecg = ECGReadout(3,2,3,8,14,0,ILI9341_GREENYELLOW,ILI9341_RED,&tft);
-
+ECGReadout spo2 = ECGReadout(6,2,3,8,14,0,ILI9341_BLUE,ILI9341_GREEN,&tft);
 /*
  * draw_submenu() - draws color box submenu on left of screen
  */
@@ -164,6 +164,7 @@ void MainScreenInit(void){
   version.draw();
   settings.draw();
   ecg.draw();
+  spo2.draw();
 }
 
 
@@ -231,12 +232,14 @@ void stopAlarm(void) {
 void setup(void){
   gui_setup();
   ecg.read();
+  spo2.read();
   sample_timer.begin(sampling_isr, 150);
   sample_timer.priority(128);
 }
 
 void sampling_isr(void) {
     ecg.read();
+    spo2.read();
 	return;
 }
 
@@ -262,6 +265,7 @@ void loop(void) {
     while (currentMode == HOMESCREEN){
   		if (display_count >= 10) {
     		ecg.display_signal();
+    		spo2.display_signal();
     		display_count = 0;
     		if (hr_counter >= 10) {
   	  			/*int hr = ecg.heart_rate();
