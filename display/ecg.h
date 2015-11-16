@@ -18,7 +18,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stats.h>
 #include <math.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -168,31 +167,6 @@ public:
     };
 
 	
-
-	/*
-	 * Pulse detection algorithm:
-	 * 
-	 */	
-	int heart_rate_diff(void) {
-		// Read data from display buffer
-		int start = -1;
-		int end = -1;
-		int avg = 0;
-		for (int i = 0; i < display_fifo.size(); i += 1) {
-			avg += display_fifo[i];	
-		}
-		avg /= display_fifo.size();
-		// TODO: Use overall signal average as a threshold for peak detection? Maybe 1 std away?
-		for (int i = 2; i < (real_width - 1); i += 1) {
-			int diff1 = display_fifo[i] - display_fifo[i-1];
-			int diff2 = display_fifo[i-1] - display_fifo[i-2];
-			if (((diff1 >= 0) && (diff2 >= 0)) || ((diff1 < 0) && (diff2 < 0))) {
-				// No sign change -> no maxima or minima	
-			}
-			
-		}
-	}
-
     int heart_rate(void){
         double sampling_period = 0.00827; // time between samples (in seconds)
         int threshold = 40;
