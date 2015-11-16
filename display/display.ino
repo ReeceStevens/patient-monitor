@@ -70,9 +70,6 @@ Button default_button = Button(6,7,2,2,ILI9341_LIGHTGREY,true,"Default Settings"
 TextBox title = TextBox(1,3,1,6,ILI9341_BLACK,ILI9341_WHITE,2,true,"   FreePulse Patient Monitor", &tft);
 TextBox version = TextBox(2,4,1,4,ILI9341_BLACK,ILI9341_WHITE,2,true," Development: v0.5", &tft);
 
-// OLD CODE
-
-
 // Create ECG trace
 ECGReadout ecg = ECGReadout(3,2,3,8,14,0,ILI9341_GREENYELLOW,ILI9341_RED,&tft);
 ECGReadout spo2 = ECGReadout(6,2,3,8,14,0,ILI9341_BLUE,ILI9341_GREEN,&tft);
@@ -265,7 +262,7 @@ void loop(void) {
     while (currentMode == HOMESCREEN){
   		if (display_count >= 10) {
     		ecg.display_signal();
-    		spo2.display_signal();
+    		//spo2.display_signal();
     		display_count = 0;
     		if (hr_counter >= 10) {
   	  			/*int hr = ecg.heart_rate();
@@ -276,7 +273,7 @@ void loop(void) {
 				tft.setTextColor(ILI9341_GREENYELLOW);
   				tft.setTextSize(2);
   				tft.println(s_hr);*/
-                showGrid();
+                //showGrid();
                 /*
                 if ((hr < DEFAULT_ECG_MIN + biasECGMin) || (hr > DEFAULT_ECG_MAX + biasSP02Max)){
                     if (!activeAlarm) {

@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stats.h>
 #include <math.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -47,13 +48,17 @@ private:
     int background_color;
 
 public:
-    ECGReadout(int row, int column, int len, int width, int pin, int reset_timer, int trace_color, int background_color, Adafruit_ILI9341* tft):ScreenElement(row,column,len,width,tft), pin(pin),reset_timer(reset_timer), trace_color(trace_color), background_color(background_color) {
-	    // Allocate space for one integer per pixel length-wise	  a
+    ECGReadout(int row, int column, int len, int width, \
+			   int pin, int reset_timer, int trace_color, \
+			   int background_color, Adafruit_ILI9341* tft): \
+			   ScreenElement(row,column,len,width,tft), pin(pin), \
+			   reset_timer(reset_timer), trace_color(trace_color), \
+			   background_color(background_color) {
+	    // Allocate space for one integer per pixel length-wise	
         fifo_multiplier = 4;
         fifo_size = real_width * fifo_multiplier; 
         fifo = Vector<double> (fifo_size);
 	    averager_queue = Vector<double>(5);
-        //this->fifo = fifo;
         display_fifo = Vector<double> (real_width);
         fifo_next = 0;
         fifo_end = 1;
@@ -69,6 +74,7 @@ public:
     void draw(void){
         tft_interface->fillRect(coord_x,coord_y,real_width,real_len,background_color);
     };
+
 	void read(void){
 	    if (avg_count < 5) {
 		    double input_num = (double) analogRead(pin);
@@ -91,7 +97,8 @@ public:
 	    }
 
     };
-    void display_signal(void){
+
+	void display_signal(void){
         draw_border(); 
         cli(); // Disable all interrupts
 	    //tft_interface->fillRect(60,0,tft_interface->real_width()-60,tft_interface->height(),ILI9341_GREEN);
@@ -159,6 +166,33 @@ public:
         disp_end = oldest;
 	    //tft_interface->fillRect(60,0,tft_interface->real_width()-60,tft_interface->height(),trace_color);
     };
+
+	
+
+	/*
+	 * Pulse detection algorithm:
+	 * 
+	 */	
+	int heart_rate_diff(void) {
+		// Read data from display buffer
+		int start = -1;
+		int end = -1;
+		int avg = 0;
+		for (int i = 0; i < display_fifo.size(); i += 1) {
+			avg += display_fifo[i];	
+		}
+		avg /= display_fifo.size();
+		// TODO: Use overall signal average as a threshold for peak detection? Maybe 1 std away?
+		for (int i = 2; i < (real_width - 1); i += 1) {
+			int diff1 = display_fifo[i] - display_fifo[i-1];
+			int diff2 = display_fifo[i-1] - display_fifo[i-2];
+			if (((diff1 >= 0) && (diff2 >= 0)) || ((diff1 < 0) && (diff2 < 0))) {
+				// No sign change -> no maxima or minima	
+			}
+			
+		}
+	}
+
     int heart_rate(void){
         double sampling_period = 0.00827; // time between samples (in seconds)
         int threshold = 40;
