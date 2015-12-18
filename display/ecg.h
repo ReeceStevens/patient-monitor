@@ -21,9 +21,9 @@
 #include <math.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
-
+//#include "Adafruit_RA8875.h"
 #include "Vector.h"
-#include <Adafruit_ILI9341.h>
+//#include <Adafruit_ILI9341.h>
 
 volatile int avg_count = 0;
 
@@ -47,7 +47,7 @@ private:
     int background_color;
 
 public:
-    ECGReadout(int row, int column, int len, int width, int pin, int reset_timer, int trace_color, int background_color, Adafruit_ILI9341* tft):ScreenElement(row,column,len,width,tft), pin(pin),reset_timer(reset_timer), trace_color(trace_color), background_color(background_color) {
+    ECGReadout(int row, int column, int len, int width, int pin, int reset_timer, int trace_color, int background_color, Adafruit_RA8875* tft):ScreenElement(row,column,len,width,tft), pin(pin),reset_timer(reset_timer), trace_color(trace_color), background_color(background_color) {
 	    // Allocate space for one integer per pixel length-wise	  a
         fifo_multiplier = 4;
         fifo_size = real_width * fifo_multiplier; 

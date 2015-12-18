@@ -1,5 +1,5 @@
-#include <Adafruit_ILI9341.h>
-#include <Arduino.h>
+//#include <Arduino.h>
+//#include "Adafruit_RA8875.h"
 
 class ScreenElement {
 private:
@@ -13,9 +13,9 @@ public:
 	int coord_y;
     int real_len;
     int real_width;
-    Adafruit_ILI9341* tft_interface;
+    Adafruit_RA8875* tft_interface;
 
-    ScreenElement(int row, int column, int len, int width, Adafruit_ILI9341* tft_interface):row(row),column(column),len(len),width(width),tft_interface(tft_interface){
+    ScreenElement(int row, int column, int len, int width, Adafruit_RA8875* tft_interface):row(row),column(column),len(len),width(width),tft_interface(tft_interface){
         coord_x = horizontal_scale*(column-1);
         coord_y = vertical_scale*(row-1);
         real_width = horizontal_scale*width;
@@ -39,7 +39,7 @@ public:
     bool visible;
     bool lastTapped;
 
-    Button(int row, int column, int len, int width, int color, bool visible, char* button_str, Adafruit_ILI9341* tft):ScreenElement(row,column,len,width,tft), color(color), visible(visible), button_str(button_str) { 
+    Button(int row, int column, int len, int width, int color, bool visible, char* button_str, Adafruit_RA8875* tft):ScreenElement(row,column,len,width,tft), color(color), visible(visible), button_str(button_str) { 
         lastTapped = 0;
     };
 
@@ -69,14 +69,17 @@ private:
 public:
     bool visible;
 
-    TextBox(int row, int column, int len, int width, int background_color, int text_color, int text_size, bool visible, char* str, Adafruit_ILI9341* tft):ScreenElement(row,column,len,width,tft), background_color(background_color), text_color(text_color), str(str), visible(visible) { };
+    TextBox(int row, int column, int len, int width, int background_color, int text_color, int text_size, bool visible, char* str, Adafruit_RA8875* tft):ScreenElement(row,column,len,width,tft), background_color(background_color), text_color(text_color), str(str), visible(visible) { };
 
     void draw(void){
-	    tft_interface->fillRect(coord_x,coord_y,real_width,real_len,background_color);
-        tft_interface->setTextSize(text_size);
-        tft_interface->setTextColor(text_color);
-        tft_interface->setCursor(coord_x+5,coord_y+5);
-        tft_interface->println(str);
+        tft_interface->textMode();
+        //tft_interface->textSetCursor(coord_x+5,coord_y+5);
+        tft_interface->textSetCursor(coord_x,coord_y);
+	    tft_interface->textColor(text_color,background_color);
+        tft_interface->textEnlarge(text_size);
+        //tft_interface->setCursor(coord_x+5,coord_y+5);
+        tft_interface->textWrite(str);
+        tft_interface->graphicsMode();
     }
 
 };
