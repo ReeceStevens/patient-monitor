@@ -41,6 +41,8 @@ uint16_t tx, ty;
 
 const int s_height = 480;
 const int s_width = 800;
+const float xScale = 1024.0F/s_width;
+const float yScale = 1024.0F/s_height;
 //const int s_height = 800;
 //const int s_width = 480;
 
@@ -58,7 +60,7 @@ const int vertical_scale = s_height / rows;
 const int horizontal_scale = s_width / columns;
 
 #include "interface.h"
-//#include "ecg.h"
+#include "ecg.h"
 
 int currentMode = 0; // Change mode
 int timeout = 0;
@@ -81,14 +83,14 @@ Button cancel_button = Button(9,9,2,2,RA8875_RED,true,"Cancel",&tft);
 Button default_button = Button(6,7,2,2,RA8875_LIGHTGREY,true,"Default Settings",&tft);
 
 /* Build all text boxes */
-TextBox title = TextBox(1,3,1,6,RA8875_GREENYELLOW,RA8875_WHITE,1,true,"   FreePulse Patient Monitor", &tft);
-TextBox version = TextBox(2,5,1,4,RA8875_BLACK,RA8875_WHITE,1,true," Development: v0.5", &tft);
+TextBox title = TextBox(1,1,1,3,RA8875_BLACK,RA8875_WHITE,3,true,"FreePulse Patient Monitor v0.9", &tft);
+//TextBox version = TextBox(2,5,1,4,RA8875_BLACK,RA8875_WHITE,1,true,"Development: v0.5", &tft);
 
 // OLD CODE
 
 
 // Create ECG trace
-//ECGReadout ecg = ECGReadout(3,2,3,8,14,0,RA8875_GREENYELLOW,RA8875_RED,&tft);
+ECGReadout ecg = ECGReadout(3,1,3,8,14,0,RA8875_GREENYELLOW,RA8875_LIGHTGREY,&tft);
 //ECGReadout spo2 = ECGReadout(6,2,3,8,14,0,RA8875_BLUE,RA8875_GREEN,&tft);
 /*
  * draw_submenu() - draws color box submenu on left of screen
@@ -186,10 +188,11 @@ void clearScreen(int color){
 
 void MainScreenInit(void){
   clearScreen(RA8875_BLACK);
+  showGrid();
   title.draw();
-  version.draw();
-  //settings.draw();
-  //ecg.draw();
+  //version.draw();
+  settings.draw();
+  ecg.draw();
   //spo2.draw();
 }
 
@@ -258,18 +261,20 @@ void stopAlarm(void) {
 
 
 void setup(void){
+  Serial.begin(9600);
   gui_setup();
   clearScreen(RA8875_BLACK);
   //tft.drawLine(50,100,50,300,RA8875_WHITE);
   //tft.drawLine(1,2*vertical_scale,s_width-1,100,RA8875_LIGHTGREY);
   //ecg.read();
   //spo2.read();
-  //sample_timer.begin(sampling_isr, 150);
-  //sample_timer.priority(128);
+  sample_timer.begin(sampling_isr, 150);
+  sample_timer.priority(128);
+  currentMode = HOMESCREEN;
 }
 
 void sampling_isr(void) {
-    //ecg.read();
+    ecg.read();
     //spo2.read();
 	return;
 }
@@ -283,14 +288,30 @@ int display_count = 0;
 int hr_counter = 0;
 
 void loop(void) {
-    //tft.drawPixel(100,100,RA8875_GREEN);
-    //tft.drawPixel(100+vertical_scale,100+vertical_scale,RA8875_RED);
-    //tft.drawPixel(100+horizontal_scale,100+horizontal_scale,RA8875_RED);
-    showGrid();
-    tft.drawCircle(300,100,70,RA8875_GREEN);
-    tft.drawCircle(330,120,70,RA8875_RED);
-    delay(100000);
+    if (currentMode == HOMESCREEN ) {
+        MainScreenInit();
+        while(currentMode == HOMESCREEN) {
+            ecg.display_signal();
+            if (tft.touched()) {
+                Serial.printf("tx: %d ty: %d\n",tx,ty);
+            }
+            if (settings.isTapped(tx,ty)){
+                clearScreen(RA8875_BLACK);
+                currentMode = ALARMSCREEN;
+            }
+        }
+    }
+    if (currentMode == ALARMSCREEN) {
+        SettingsScreenInit();
+        while (currentMode == ALARMSCREEN) {
+            if (cancel_button.isTapped(tx,ty)) {
+                clearScreen(RA8875_BLACK);
+                currentMode = HOMESCREEN;
+            }
+        }
+    }
 }
+
 /*
 void loop(void) {
   //main screen

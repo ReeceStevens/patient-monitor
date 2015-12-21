@@ -94,27 +94,24 @@ public:
     void display_signal(void){
         draw_border(); 
         cli(); // Disable all interrupts
-	    //tft_interface->fillRect(60,0,tft_interface->real_width()-60,tft_interface->height(),ILI9341_GREEN);
+
         // Trackers will always round down. Not ideal, but lets us shrink fifo size without much fuss.
-	    //nointerrupts();
         int newest = fifo_next/fifo_multiplier;
         int oldest = fifo_end/fifo_multiplier;
         // Make our copy of the data so we can draw while the analog pin
         // keeps sampling and updating the buffer.
-        Vector<double> new_input_data(fifo);
-        sei(); // Re-enable all interrupts
-	    //interrupts();
+        //Vector<double> new_input_data(fifo);
         Vector<double> new_display_data(real_width);
         for (uint32_t i = 0; i < fifo_size; i += fifo_multiplier) {
             double maximum = 0;
             for (uint32_t k = 0; k < fifo_multiplier; k += 1) {
-                if (new_input_data[i+k] > maximum) {
-                 maximum = new_input_data[i+k];
+                if (fifo[i+k] > maximum) {
+                 maximum = fifo[i+k];
                 }
             }
             new_display_data[i/fifo_multiplier] = maximum; 
         }
-	    //tft_interface->fillRect(60,0,tft_interface->real_width()-60,tft_interface->height(),trace_color);
+        sei(); // Re-enable all interrupts
         int i = 0;
         int line_thresh = 10;
         // Draw over old data in black and new data in white

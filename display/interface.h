@@ -45,13 +45,23 @@ public:
 
     void draw(void){
 	    tft_interface->fillRect(coord_x,coord_y,real_width,real_len,color);
+        tft_interface->textMode();
+        //tft_interface->textSetCursor(coord_x, coord_y);
+        tft_interface->textSetCursor(coord_x + (real_width/5), coord_y + (real_len/2)-5);
+        tft_interface->textColor(RA8875_BLACK, color);
+        tft_interface->textEnlarge(0);
+        tft_interface->textWrite(button_str);
+        tft_interface->graphicsMode();
     }
 
-    bool isTapped(int x, int y){
+
+    bool isTapped(uint16_t raw_x, uint16_t raw_y){
 	    // Weirdness is happening right now where x and y axes are switched
 	    // Once this is fixed in the main script, fix this function too!
-	    if ((x >= coord_x) & (x <= (coord_x + real_width))){
-		    if ((y >= coord_y) & (y <= (coord_y + real_len))){
+        uint16_t x = (uint16_t) raw_x / xScale; 
+        uint16_t y = (uint16_t) raw_y / yScale; 
+	    if ((x >= coord_x) && (x <= (coord_x + real_width))){
+		    if ((y >= coord_y) && (y <= (coord_y + real_len))){
 				    return true;
 		    }
 	    }
@@ -76,7 +86,8 @@ public:
         //tft_interface->textSetCursor(coord_x+5,coord_y+5);
         tft_interface->textSetCursor(coord_x,coord_y);
 	    tft_interface->textColor(text_color,background_color);
-        tft_interface->textEnlarge(text_size);
+        //tft_interface->textEnlarge(text_size);
+        tft_interface->textEnlarge(1);
         //tft_interface->setCursor(coord_x+5,coord_y+5);
         tft_interface->textWrite(str);
         tft_interface->graphicsMode();
