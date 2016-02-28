@@ -48,8 +48,8 @@ private:
 
 public:
     ECGReadout(int row, int column, int len, int width, int pin, int reset_timer, int trace_color, int background_color, Adafruit_RA8875* tft):ScreenElement(row,column,len,width,tft), pin(pin),reset_timer(reset_timer), trace_color(trace_color), background_color(background_color) {
-	    // Allocate space for one integer per pixel length-wise	  a
-        fifo_multiplier = 4;
+	    // Allocate space for one integer per pixel length-wise	  
+        fifo_multiplier = 2;
         fifo_size = real_width * fifo_multiplier; 
         fifo = Vector<double> (fifo_size);
 	    averager_queue = Vector<double>(5);
@@ -68,6 +68,7 @@ public:
     };
     void draw(void){
         tft_interface->fillRect(coord_x,coord_y,real_width,real_len,background_color);
+		draw_border();
     };
 	void read(void){
 	    if (avg_count < 5) {
@@ -92,7 +93,7 @@ public:
 
     };
     void display_signal(void){
-        draw_border(); 
+        //draw_border(); 
         cli(); // Disable all interrupts
 
         // Trackers will always round down. Not ideal, but lets us shrink fifo size without much fuss.
