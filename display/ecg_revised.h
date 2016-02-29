@@ -70,7 +70,8 @@ public:
 		} else {
 			tft->drawPixel(coord_x + display_cursor, coord_y + display, trace_color);
 		}
-		display_cursor = mod(display_cursor+1, real_width);
+		display_cursor = mod(display_cursor+1, real_width); // Advance display cursor
+		tft->drawFastVLine(coord_x + display_cursor, coord_y, coord_y + real_width, RA8875_WHITE); // Draw display cursor
 	}
 
 };
