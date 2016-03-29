@@ -41,7 +41,7 @@ const int vertical_scale = s_height / rows;
 const int horizontal_scale = s_width / columns;
 
 #include "interface.h"
-#include "ecg.h"
+#include "ecg_revised.h"
 
 int currentMode = 0; // Change mode
 
@@ -58,8 +58,8 @@ Button default_button = Button(6,7,2,2,RA8875_LIGHTGREY,true,"Default Settings",
 
 TextBox title = TextBox(1,3,1,3,RA8875_BLACK,RA8875_WHITE,3,true,"FreePulse Patient Monitor v0.9", &tft);
 
-ECGReadout ecg = ECGReadout(2,1,3,8,14,0,RA8875_BLACK,RA8875_LIGHTGREY,&tft);
-ECGReadout ecg2 = ECGReadout(5,1,3,8,14,0,RA8875_RED,RA8875_LIGHTGREY,&tft);
+ECGReadout ecg = ECGReadout(2,1,3,8,15,RA8875_BLUE,RA8875_LIGHTGREY,&tft);
+ECGReadout ecg2 = ECGReadout(5,1,3,8,16,RA8875_RED,RA8875_LIGHTGREY,&tft);
 
 /*
  * showGrid() - 
@@ -118,20 +118,31 @@ void sampling_isr(void) {
 	return;
 }
 
+void display_isr(void) {
+	ecg.display_signal();
+	ecg2.display_signal();
+}
+
 IntervalTimer sample_timer;
+IntervalTimer display_timer;
+
+// TODO: try to make a controlled display refresh rate?
 
 void setup(void) {
 	Serial.begin(9600);
   	gui_init();
   	clearScreen(RA8875_BLACK);
-  	sample_timer.begin(sampling_isr, 150);
   	sample_timer.priority(128);
+  	display_timer.priority(129);
   	currentMode = HOMESCREEN;
+    MainScreenInit();
+  	sample_timer.begin(sampling_isr, 500); // 2000 Hz Sampling Rate (device max is 10000)
+  	display_timer.begin(display_isr, 800); 
 }
 
 void loop(void) {
 	if (currentMode == HOMESCREEN) {
-		MainScreenInit();
+		//MainScreenInit();
 		int delay_touch_detection = 10000;
     	for (int i = 0; i < delay_touch_detection; i += 1) {
 			tft.touchRead(&tx, &ty);
@@ -139,9 +150,13 @@ void loop(void) {
 		// Clear the touch points to prevent double-presses
 		tx = 0;
 		ty = 0;
+		int display_timer = 0;
+		int max_time = 200;
         while(currentMode == HOMESCREEN) {
-            ecg.display_signal();
-            ecg2.display_signal();
+			/*if (display_timer == max_time) {
+				display_timer = 0;
+		    } else { display_timer += 1; }*/
+			//delay(10);
             if (!digitalRead(RA8875_INT) && (tft.touched())) {
 				while (!digitalRead(RA8875_INT) && tft.touched()) {
 					tft.touchRead(&tx, &ty);

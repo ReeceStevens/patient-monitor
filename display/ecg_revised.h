@@ -4,6 +4,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include "CircleFifo.h"
+#include "Vector.h"
 
 class ECGReadout : public ScreenElement {
 private:
@@ -13,19 +14,19 @@ private:
 	int display_cursor;
 	int pin;
 	CircleFifo<int> fifo;
-	int scaling factor;
+	int scaling_factor;
 	Vector<int> avg_queue;
 	int trace_color;
 	int background_color;
 
 public:	
     ECGReadout(int row, int column, int len, int width, int pin, 
-				int trace_color, int background_color, Adafruit_RA8875* tft):
-				ScreenElement(row,column,len,width,tft), pin(pin), trace_color(trace_color),
+				int trace_color, int background_color, Adafruit_RA8875* tft_interface):
+				ScreenElement(row,column,len,width,tft_interface), pin(pin), trace_color(trace_color),
 			   	background_color(background_color) {
 		fifo_size = real_width;
 		fifo = CircleFifo<int>(fifo_size);
-		avg_size = 5;
+		avg_size = 10;
 		avg_cursor = 0;
 		display_cursor = 0;
 		avg_queue = Vector<int>(avg_size);
@@ -42,7 +43,7 @@ public:
 	void read(void) {
 		if (avg_cursor < avg_size) {
 			int input = analogRead(pin);
-			avg_queue[avg_count] = input;
+			avg_queue[avg_cursor] = input;
 			avg_cursor += 1;
 		} else {
 			avg_cursor = 0;
@@ -57,21 +58,27 @@ public:
 
 	void display_signal(void) {
 		// Get newest value from fifo
-		cli();
+		noInterrupts();
 		int new_val = fifo[0];
 		int last_val = fifo[1];
-		sei();
-		int threshold = 10;
+		interrupts();
+		int threshold = 1900;
 		int display = new_val * real_len;
-		display /= 1023;
-		tft->drawFastVLine(coord_x + display_cursor, coord_y, coord_y + real_len, background_color);
-		if ((new_val - last_val > threshold) || (new_val - last_val < -threshold)) {
-			tft->drawFastVLine(coord_x + display_cursor, coord_y+last_val, coord_y + new_val, trace_color);
+		display /= 2046;
+		if (display > real_len) { display = real_len; }
+		else if (display < 0) { display = 0; }
+		int old_display = last_val * real_len;
+		old_display /= 2046;
+		if (old_display > real_len) { old_display = real_len; }
+		else if (old_display < 0) { old_display = 0; }
+		tft_interface->drawFastVLine(coord_x + display_cursor, coord_y, real_len, background_color);
+		if ((display - old_display > threshold) || (display - old_display < -threshold)) {
+			tft_interface->drawLine(coord_x + display_cursor, coord_y + real_len - old_display, coord_x + display_cursor, coord_y + real_len - display, trace_color);
 		} else {
-			tft->drawPixel(coord_x + display_cursor, coord_y + display, trace_color);
+			tft_interface->drawPixel(coord_x + display_cursor, coord_y + real_len - display, trace_color);
 		}
-		display_cursor = mod(display_cursor+1, real_width); // Advance display cursor
-		tft->drawFastVLine(coord_x + display_cursor, coord_y, coord_y + real_width, RA8875_WHITE); // Draw display cursor
+		display_cursor = CircleFifo<int>::mod(display_cursor+1, real_width); // Advance display cursor
+		tft_interface->drawFastVLine(coord_x + display_cursor, coord_y, real_len, RA8875_WHITE); // Draw display cursor
 	}
 
 };
