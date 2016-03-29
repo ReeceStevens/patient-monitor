@@ -19,4 +19,4 @@ Accolades
 1st place, Engineering World Health National Design Competition
 2nd place, National Institute of Health DEBUT Competition
 
-[sitelink]: www.freepulsemed.com
+[sitelink]: http://www.freepulsemed.com
