@@ -1,3 +1,4 @@
+
 #include <stdint.h>
 #include <SPI.h>
 #include <Adafruit_GFX.h>
@@ -5,56 +6,80 @@
 #include <Adafruit_STMPE610.h>
 #include <Wire.h>
 
-#include "interface.h"
-#include "ecg.h"
 
+
+#define ILI9341_PINK        0xF81F
 #define ILI9341_GREENYELLOW 0xAFE5      /* 173, 255,  47 */
+#define ILI9341_LIGHTGREY   0xC618      /* 192, 192, 192 */
 #define CS_TOUCH 8
 #define CS_SCREEN  10
 #define DC 9
 #define RST 7
+#define HOMESCREEN 0
+#define ALARMSCREEN 1
 
 // This is calibration data for the raw touch data to the screen coordinates
 #define TS_MINX 150
 #define TS_MINY 130
 #define TS_MAXX 3800
 #define TS_MAXY 4000
+#define DEFAULT_ECG_MAX 98
+#define DEFAULT_ECG_MIN 90
+#define DEFAULT_SP02_MAX 100
+#define DEFAULT_SP02_MIN 95
 
 #define BOXSIZE 60
-
-int currentMode = 0; // Change mode
-int timeout = 0;
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(CS_SCREEN, DC);
 Adafruit_STMPE610 ts = Adafruit_STMPE610(CS_TOUCH);
 
 #define HEIGHT tft.width()
 #define WIDTH tft.height()
-// NOTE: tft.height() and tft.width() are mixed up due to orientation issues in the Adafruit drivers.
-// tft.height() returns the width (x-axis), while tft.width() returns the height (y-axis)
-// hence this awkward macro
 
-// Create submenu buttons
-Button hr_button = Button(0,0,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
-Button sp_button = Button(0,BOXSIZE,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
-Button temp_button = Button(0,BOXSIZE*2,BOXSIZE,BOXSIZE,ILI9341_BLUE,true,&tft);
-Button alarm_button = Button(260,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
-Button confirm_button = Button(0,200,BOXSIZE,BOXSIZE,ILI9341_GREEN,true,&tft);
-Button default_button = Button(BOXSIZE,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
-Button mode_button = Button(BOXSIZE*2,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
-Button cancel_button = Button(BOXSIZE*3,200,BOXSIZE,BOXSIZE,ILI9341_RED,true,&tft);
+// Defining screen proportions
+const int rows = 10;
+const int columns = 10;
 
+const int vertical_scale = HEIGHT/rows;
+const int horizontal_scale = WIDTH/columns;
+
+#include "interface.h"
+#include "ecg.h"
+
+int currentMode = 0; // Change mode
+int timeout = 0;
+int biasECGMax = 0;
+int biasECGMin = 0;
+int biasSP02Max = 0;
+int biasSP02Min = 0;
+int i = 0;
+
+// Keep track of screen inversion and alarm state
+volatile int inverted = 0;
+volatile int activeAlarm = 0;
+
+
+/* Build all buttons */
+
+Button settings = Button(9,9,2,2,ILI9341_RED,true,"Alarm Settings",&tft);
+Button confirm_button = Button(9,1,2,2,ILI9341_GREEN,true,"Confirm",&tft);
+Button cancel_button = Button(9,9,2,2,ILI9341_RED,true,"Cancel",&tft);
+Button default_button = Button(6,7,2,2,ILI9341_LIGHTGREY,true,"Default Settings",&tft);
+
+/* Build all text boxes */
+TextBox title = TextBox(1,3,1,6,ILI9341_BLACK,ILI9341_WHITE,2,true,"   FreePulse Patient Monitor", &tft);
+TextBox version = TextBox(2,4,1,4,ILI9341_BLACK,ILI9341_WHITE,2,true," Development: v0.5", &tft);
 
 // Create ECG trace
-ECGReadout ecg = ECGReadout(10,50,tft.height() - BOXSIZE, 100, 15 , 0, &tft);
-
+ECGReadout ecg = ECGReadout(3,2,3,8,14,0,ILI9341_GREENYELLOW,ILI9341_RED,&tft);
+ECGReadout spo2 = ECGReadout(6,2,3,8,14,0,ILI9341_BLUE,ILI9341_GREEN,&tft);
 /*
  * draw_submenu() - draws color box submenu on left of screen
  */
  
  //Write labels
-char Title[] = "Texas Engineering World Health";
-char Version[] = "Patient Monitor v2.1";
+char Title[] = "FreePulse Patient Monitor";
+char Version[] = "Alpha Software v0.1";
 char ecgTitle[] = "ECG/HR (bpm)";
 char ecgLabel[] = "ECG";
 char sp02Title[] = "sp02 (%Sat.)";
@@ -81,7 +106,7 @@ void createVLabel(int x_coord, int y_coord, char* label, int textsize, int color
     tft.setCursor(x_coord, y_coord);
     tft.printf("%c", *label);
     label += 1;
-    y_coord += 8;
+    y_coord += 8*textsize;
   }
 }
 
@@ -99,26 +124,18 @@ void createHLabel(int x_coord, int y_coord, char* label,int textsize, int color)
   }
 }
 
-
-//old model interface
-void draw_submenu() {
-	hr_button.draw();
-	sp_button.draw();
-	temp_button.draw();
-	alarm_button.draw();
-}
-
 /*
- * product_title() - prints product name and version no.
+ * showGrid() - 
+ * DEVELOPMENT FUNCTION ONLY.
+ * Draw gridlines for interface.
  */
-void product_title(){
-  createHLabel(BOXSIZE + 20, 0, Title, 1, ILI9341_WHITE);
-  createHLabel(BOXSIZE + 40, 10, Version, 1, ILI9341_WHITE);
-  
-  /* create border */
-  tft.drawFastVLine(BOXSIZE + 17, 0, 20, ILI9341_WHITE);
-  tft.drawFastHLine(BOXSIZE + 17, 20, 185, ILI9341_WHITE);
-  tft.drawFastVLine(BOXSIZE + 202, 0, 20, ILI9341_WHITE);
+void showGrid(void){
+    for (int i = 1; i < rows; i += 1) {
+        tft.drawFastHLine(1,i*vertical_scale,HEIGHT,ILI9341_LIGHTGREY);
+    }
+    for (int i = 1; i < columns; i += 1) {
+        tft.drawFastVLine(i*horizontal_scale,1,WIDTH,ILI9341_LIGHTGREY);
+    }
 }
 
 /*
@@ -127,71 +144,8 @@ void product_title(){
 void gui_setup(){
 	tft.begin();
 	ts.begin();
-	tft.fillScreen(ILI9341_BLACK);
+    clearScreen(ILI9341_BLACK);
 	tft.setRotation(1);
-	ecg.draw();
-}
-
-/*
- * ECG_setup() - intialize ECG and HR interfaces
- */
-void ECG_setup(){
-  createHLabel(BOXSIZE + 55, 40, ecgTitle, 1, ILI9341_GREEN);
-  createVLabel(0, 56, ecgLabel, 1, ILI9341_GREEN);
-  createVLabel(tft.width()-45, 60, hrLabel, 1, ILI9341_GREEN);
-  tft.setCursor(tft.width()-30, 60);
-  tft.setTextSize(2);
-  tft.println("60");
-}
-
-/*
- * sp02_setup() - intialize sp02 and % saturation interfaces
- */
-void sp02_setup(){
-  createHLabel(BOXSIZE + 55, 125, sp02Title, 1, ILI9341_CYAN);
-  createVLabel(0, 141, sp02Label, 1, ILI9341_CYAN);
-  createVLabel(tft.width()-50, 142, satLabel, 1, ILI9341_CYAN);
-  tft.setCursor(tft.width()-40, 146);
-  tft.setTextSize(2);
-  tft.println("97%"); 
-}
-
-void temperature_setup(){
-  createHLabel(BOXSIZE + 55, 150, tempTitle, 1, ILI9341_GREENYELLOW);
-  createVLabel(30, 171, farLabel, 1, ILI9341_GREENYELLOW);
-  createVLabel(tft.width()-120, 171, celLabel, 1, ILI9341_GREENYELLOW);
-  tft.setCursor(50, 175);
-  tft.setTextSize(2);
-  tft.setTextColor(ILI9341_GREENYELLOW);
-  tft.println("98.6");
-  tft.setCursor(tft.width()-100, 175);
-  tft.println("37");
-}
-
-void alarm_button_setup(void){
-  alarm_button.draw();
-  createHLabel(265, 210, alarmLabel, 1, ILI9341_BLACK);
-  createHLabel(265, 220, settingsLabel, 1, ILI9341_BLACK);
-}
-
-void confirm_button_setup(void){
-  confirm_button.draw();
-  createHLabel(9, 217, confirmLabel, 1, ILI9341_BLACK);
-}
-
-void default_button_setup(void){
-  default_button.draw();
-  createHLabel(BOXSIZE + 10, 217, defaultLabel, 1, ILI9341_BLACK);
-}
-
-void mode_button_setup(void){
-  mode_button.draw();
-  createHLabel(BOXSIZE*2 + 20, 217, modeLabel, 1, ILI9341_BLACK);
-}
-
-void cancel_button_setup(void){
-  cancel_button.draw();
-  createHLabel(BOXSIZE*3 + 14, 217, cancelLabel, 1, ILI9341_BLACK);
 }
 
 /*
@@ -203,116 +157,152 @@ void clearScreen(int color){
 
 void MainScreenInit(void){
   clearScreen(ILI9341_BLACK);
-  product_title();  
-  ECG_setup();
-  sp02_setup();
-  //temperature_setup();
-  alarm_button_setup();
+  title.draw();
+  version.draw();
+  settings.draw();
+  ecg.draw();
+  spo2.draw();
 }
+
 
 void SettingsScreenInit(void){
   clearScreen(ILI9341_BLACK);
-  confirm_button_setup();
-  default_button_setup();
-  mode_button_setup();
-  cancel_button_setup();
-  tft.drawFastVLine(BOXSIZE, 200, 40, ILI9341_BLACK);
-  tft.drawFastVLine(BOXSIZE*2, 200, 40, ILI9341_BLACK);
-  tft.drawFastVLine(BOXSIZE*3, 200, 40, ILI9341_BLACK);
+  confirm_button.draw();
+  default_button.draw();
+  cancel_button.draw();
 }
 
-/*
-void TIMER1_OVF_vect() {
-    ecg.read();
-    PIT_TFLG1 |= 0x1; // clear interrupt flag
-} */
+void fixCoordinates(int* x, int* y){
+  int temp = *x;
+  *x = *y;
+  *y = temp;
+}
 
-/*void interrupt_setup() {
-    PIT_MCR = 0x00;
-    PIT_LDVAL1 = 0x00001300; // Setup timer 1 for 20 cycles
-    PIT_TCTRL1 = 0x2; // enable Timer 1 interrupts
-    PIT_TCTRL1 |= 0x1; // start timer
-} */
+TS_Point getFixedCoordinates(void){
+   if (ts.bufferEmpty()) { return TS_Point(tft.height(), tft.width(), 0); }
+   TS_Point p = ts.getPoint();
+   while(!ts.bufferEmpty()){
+       p = ts.getPoint(); 
+   }
+   // Scale from 0-4000 to tft.width() using calibration numbers
+   p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
+   p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
+   int temp = p.x;
+   p.x = p.y;
+   p.y = temp;
+   return p;
+}
 
-IntervalTimer myTimer;
+void toggleInvert(void) {
+    cli();
+    if (inverted) {
+        tft.invertDisplay(false);
+        inverted = 0;
+    } else {
+        tft.invertDisplay(true);
+        inverted = 1;
+    }
+    sei();
+    return; 
+}
+
+// Interrupts for sampling and alarm system
+IntervalTimer sample_timer;
+IntervalTimer alarm_timer;
+
+void throwAlarm(void) {
+    cli();
+    alarm_timer.begin(alarm_isr, 1000000);
+    alarm_timer.priority(100);
+    activeAlarm = 1;
+    sei();
+}
+
+void stopAlarm(void) {
+    cli();
+    alarm_timer.end();
+    activeAlarm = 0;
+    sei();
+}
+
 
 void setup(void){
   gui_setup();
-  product_title();  
-  ECG_setup();
-  sp02_setup();
-  temperature_setup();
-  //settings_setup();
-  alarm_button_setup();
   ecg.read();
-  myTimer.begin(isr, 150);
-  myTimer.priority(128);
+  spo2.read();
+  sample_timer.begin(sampling_isr, 150);
+  sample_timer.priority(128);
 }
 
-void isr(void) {
-	//clearScreen(ILI9341_BLUE);
+void sampling_isr(void) {
     ecg.read();
+    spo2.read();
 	return;
+}
+
+void alarm_isr(void) {
+    toggleInvert();
+    return;
 }
 
 int display_count = 0;
 int hr_counter = 0;
+
 void loop(void) {
   /*main screen*/
-  if (currentMode == 0){
+  if (currentMode == HOMESCREEN){
     MainScreenInit();
-    while (currentMode == 0){
+    stopAlarm();
+    int delay_touch_detection = 10000;
+    for (int i = 0; i < delay_touch_detection; i += 1) {
+        if (!ts.bufferEmpty()){
+            volatile TS_Point tossout = getFixedCoordinates();
+        }
+    }
+    while (currentMode == HOMESCREEN){
   		if (display_count >= 10) {
     		ecg.display_signal();
+    		//spo2.display_signal();
     		display_count = 0;
     		if (hr_counter >= 10) {
-  	  			int hr = ecg.heart_rate();
+  	  			/*int hr = ecg.heart_rate();
     			String s_hr = String(hr);
     			hr_counter = 0;
-				tft.fillRect(tft.width()-45, 60, 45, 45, ILI9341_BLACK);
-  				tft.setCursor(tft.width()-45, 60);
+				tft.fillRect(tft.width()-45, 120, 45, 45, ILI9341_BLACK);
+  				tft.setCursor(tft.width()-45, 120);
 				tft.setTextColor(ILI9341_GREENYELLOW);
   				tft.setTextSize(2);
-  				tft.println(s_hr);
-    		} else { hr_counter += 1; }
+  				tft.println(s_hr);*/
+                //showGrid();
+                /*
+                if ((hr < DEFAULT_ECG_MIN + biasECGMin) || (hr > DEFAULT_ECG_MAX + biasSP02Max)){
+                    if (!activeAlarm) {
+                        throwAlarm();
+                    }
+                }
+                else {
+                    if (activeAlarm) {
+                        stopAlarm(); 
+                    }
+    		    } */ 
   		}
-  		else {
-    		display_count += 1;
-  		} 
+        else { hr_counter += 1; }
+        }
+  		else { display_count += 1;} 
+
 	  if (ts.bufferEmpty()) {
 		continue;
-	  }
+	  } 
       // Retrieve the touch point
-      TS_Point p = ts.getPoint();
-      // Scale from 0-4000 to tft.width() using calibration numbers
-      p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
-      p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
-      int temp = p.y;
-      p.y = p.x;
-      p.x = temp;
-      if (alarm_button.isTapped(p.x,p.y)){
-        currentMode = 1;
+      TS_Point p = getFixedCoordinates();
+      if (settings.isTapped(p.x,p.y)){
+        currentMode = ALARMSCREEN;
       }
     }
   }
   /*alarm screen*/
-  if (currentMode == 1){
-    SettingsScreenInit();
-    while (currentMode == 1){
-	  if (ts.bufferEmpty()) {
-		continue;
-	  }
-      TS_Point p = ts.getPoint();
-      // Scale from 0-4000 to tft.width() using calibration numbers
-      p.x = tft.height() - map(p.x, TS_MINX, TS_MAXX, 0, tft.height());
-      p.y = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
-      int temp = p.y;
-      p.y = p.x;
-      p.x = temp;
-      if (confirm_button.isTapped(p.x,p.y)){
-        currentMode = 0;
-      }
-    }
-  }
+  if (currentMode == ALARMSCREEN){
+    currentMode = HOMESCREEN;
+  }  
 }
   
