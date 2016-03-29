@@ -1,15 +1,22 @@
 # FreePulse Patient Monitor
 
-Texas Engineering World Health presents the FreePulse patient monitor, 
-a low cost alternative to traditional patient monitor devices. 
+Introducing FreePulse, a low-cost patient monitor designed for developing world hospitals.
 
-![alt tag](resources/cover.png)
+Check out the project website [here][sitelink]!
+
+![alt tag](resources/cover.jpg)
 
 Features
 --------
-- ECG and SpO2 monitoring
+- 3-lead ECG, SpO2, and NIBP monitoring
 - 6 hour battery life and uninterrupted power supply
 - Touch screen interface
 - Portable design
 - Sturdy plastic enclosure
 
+Accolades
+--------
+1st place, Engineering World Health National Design Competition
+2nd place, National Institute of Health DEBUT Competition
+
+[sitelink]: www.freepulsemed.com
