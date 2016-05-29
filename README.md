@@ -1,5 +1,9 @@
 # FreePulse Patient Monitor
 
+***THIS REPO IS DEPRECATED***
+
+Significant hardware changes merited a fresh start with the code. Check out the new repo [here][newrepo]
+
 Introducing FreePulse, a low-cost patient monitor designed for developing world hospitals.
 
 Check out the project website [here][sitelink]!
@@ -20,3 +24,4 @@ Accolades
 2nd place, National Institute of Health DEBUT Competition
 
 [sitelink]: http://www.freepulsemed.com
+[newrepo]: https://www.github.com/ReeceStevens/freepulse
